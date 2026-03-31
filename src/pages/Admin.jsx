@@ -14,14 +14,13 @@ export default function Admin() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { migrateFromLocalStorage } = useAppStore();
 
   // === HANDLERS SISWA ===
   const handleStudentSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const data = {
-      nis: fd.get('nis'),
+      nisn: fd.get('nisn'),
       nama: fd.get('nama'),
       kelas: fd.get('kelas')
     };
@@ -29,7 +28,7 @@ export default function Admin() {
     setLoading(true);
     try {
       if (editingStudent) {
-        await updateStudent(editingStudent.nis, data);
+        await updateStudent(editingStudent.nisn, data);
         addToast('Siswa berhasil diubah', 'success');
       } else {
         await addStudent(data);
@@ -41,11 +40,11 @@ export default function Admin() {
     finally { setLoading(false); }
   };
 
-  const handleStudentDelete = async (nis) => {
+  const handleStudentDelete = async (nisn) => {
     if (window.confirm("Hapus data siswa ini? Semua data absensinya mungkin akan kehilangan referensi nama. Lanjutkan?")) {
       setLoading(true);
       try {
-        await deleteStudent(nis);
+        await deleteStudent(nisn);
         addToast('Data siswa dihapus', 'success');
       } catch (err) { addToast(err.message, 'error'); }
       finally { setLoading(false); }
@@ -90,19 +89,6 @@ export default function Admin() {
     }
   };
 
-  const handleMigrate = async () => {
-    if (window.confirm("Apakah Anda yakin ingin memigrasi data dari LocalStorage ke Supabase? Pastikan Anda tahu apa yang Anda lakukan.")) {
-      setLoading(true);
-      try {
-        await migrateFromLocalStorage();
-        addToast('Migrasi selesai!', 'success');
-      } catch (err) {
-        addToast(err.message, 'error');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
 
   if (session?.role !== 'admin') return <div className="text-center p-10 text-xl font-bold">Akses Ditolak</div>;
 
@@ -124,14 +110,6 @@ export default function Admin() {
             onClick={() => setActiveTab('guru')}
           >👨‍🏫 Data Guru / Admin</button>
         </div>
-        <button 
-          onClick={handleMigrate}
-          disabled={loading}
-          className="px-4 py-2 bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg text-xs font-bold transition flex items-center gap-2"
-          title="Salin data siswa dari komputer ini ke Cloud"
-        >
-          {loading ? '⏳' : '⚡'} Migrasi Data Local
-        </button>
       </div>
 
       {activeTab === 'siswa' && (
@@ -150,7 +128,7 @@ export default function Admin() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-[#ffffff05] border-b border-white/5 text-slate-400 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
-                  <th className="px-4 py-3 font-medium">NIS</th>
+                  <th className="px-4 py-3 font-medium">NISN</th>
                   <th className="px-4 py-3 font-medium">Nama Siswa</th>
                   <th className="px-4 py-3 font-medium">Kelas</th>
                   <th className="px-4 py-3 font-medium text-right">Aksi</th>
@@ -158,13 +136,13 @@ export default function Admin() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {students.map(s => (
-                  <tr key={s.nis} className="hover:bg-white/5 transition">
-                    <td className="px-4 py-2 font-mono text-indigo-400">{s.nis}</td>
+                  <tr key={s.nisn} className="hover:bg-white/5 transition">
+                    <td className="px-4 py-2 font-mono text-indigo-400">{s.nisn}</td>
                     <td className="px-4 py-2 font-medium text-white">{s.nama}</td>
                     <td className="px-4 py-2 text-slate-300">{s.kelas}</td>
                     <td className="px-4 py-2 text-right">
                       <button onClick={() => { setEditingStudent(s); setShowStudentModal(true); }} disabled={loading} className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 text-indigo-400 rounded transition mr-2">✏️</button>
-                      <button onClick={() => handleStudentDelete(s.nis)} disabled={loading} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-500 rounded transition">🗑️</button>
+                      <button onClick={() => handleStudentDelete(s.nisn)} disabled={loading} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-500 rounded transition">🗑️</button>
                     </td>
                   </tr>
                 ))}
@@ -225,8 +203,8 @@ export default function Admin() {
             <h2 className="text-xl font-bold mb-4">{editingStudent ? '✏️ Edit Data Siswa' : '+ Tambah Siswa Baru'}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-1">NIS (Nomor Induk Siswa)</label>
-                <input name="nis" required type="text" defaultValue={editingStudent?.nis} readOnly={!!editingStudent} className={`w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white outline-none ${editingStudent ? 'opacity-50 cursor-not-allowed' : 'focus:border-indigo-500'}`} placeholder="Nomor unik" />
+                <label className="block text-sm text-slate-300 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
+                <input name="nisn" required type="text" defaultValue={editingStudent?.nisn} readOnly={!!editingStudent} className={`w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white outline-none ${editingStudent ? 'opacity-50 cursor-not-allowed' : 'focus:border-indigo-500'}`} placeholder="Nomor unik (10 digit)" />
               </div>
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Nama Lengkap</label>

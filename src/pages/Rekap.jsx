@@ -24,7 +24,7 @@ export default function Rekap() {
       const isBeforeTo = !filterTo || r.tanggal <= filterTo;
       const matchKelas = !filterKelas || r.kelas === filterKelas;
       const matchStatus = !filterStatus || r.status === filterStatus;
-      const matchSearch = !search || r.nama.toLowerCase().includes(search.toLowerCase()) || r.nis.includes(search);
+      const matchSearch = !search || r.nama.toLowerCase().includes(search.toLowerCase()) || (r.nisn || '').includes(search);
       return isAfterFrom && isBeforeTo && matchKelas && matchStatus && matchSearch;
     }).sort((a, b) => {
       // sort latest first
@@ -70,7 +70,7 @@ export default function Rekap() {
       No: i + 1,
       Tanggal: r.tanggal,
       Waktu: r.waktu,
-      NIS: r.nis,
+      NISN: r.nisn,
       Nama: r.nama,
       Kelas: r.kelas,
       Status: r.status.toUpperCase(),
@@ -158,7 +158,7 @@ export default function Rekap() {
           <div className="print:hidden w-full sm:w-64">
             <input 
               type="text" 
-              placeholder="Cari nama atau NIS..." 
+              placeholder="Cari nama atau NISN..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full bg-[#080818] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" 
@@ -170,7 +170,7 @@ export default function Rekap() {
             <thead className="bg-[#ffffff05] border-b border-white/5 text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Tanggal</th>
-                <th className="px-4 py-3 font-medium">NIS</th>
+                <th className="px-4 py-3 font-medium">NISN</th>
                 <th className="px-4 py-3 font-medium">Nama Siswa</th>
                 <th className="px-4 py-3 font-medium">Kelas</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -186,7 +186,7 @@ export default function Rekap() {
               ) : filteredRecords.map(r => (
                 <tr key={r.id} className="hover:bg-white/5 transition">
                   <td className="px-4 py-3 text-slate-400 text-xs">{r.tanggal}</td>
-                  <td className="px-4 py-3 text-indigo-400 font-mono text-xs">{r.nis}</td>
+                  <td className="px-4 py-3 text-indigo-400 font-mono text-xs">{r.nisn}</td>
                   <td className="px-4 py-3 font-medium text-white">{r.nama}</td>
                   <td className="px-4 py-3 text-slate-300">{r.kelas}</td>
                   <td className="px-4 py-3">

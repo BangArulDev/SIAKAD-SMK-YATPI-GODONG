@@ -40,7 +40,7 @@ export default function TugasSiswa() {
 
   const pengumpulanSiswa = useMemo(() => {
     if (!session) return [];
-    return (pengumpulan || []).filter(p => p.nis === session?.nis);
+    return (pengumpulan || []).filter(p => p.nisn === session?.nisn);
   }, [pengumpulan, session]);
 
   const getSudahKumpul = (tugasId) => pengumpulanSiswa.find(p => p.tugas_id === tugasId);
@@ -153,11 +153,11 @@ export default function TugasSiswa() {
             byteArrays.push(byteArray);
           }
           blobToUpload = new Blob(byteArrays, { type: contentType });
-          finalFileName = `foto_${session.nis}_${Date.now()}.jpg`;
+          finalFileName = `foto_${session.nisn}_${Date.now()}.jpg`;
           finalFileType = contentType;
         } else if (fileRaw) {
           blobToUpload = fileRaw;
-          finalFileName = `${session.nis}_${Date.now()}_${fileRaw.name}`;
+          finalFileName = `${session.nisn}_${Date.now()}_${fileRaw.name}`;
           finalFileType = fileRaw.type;
         }
 

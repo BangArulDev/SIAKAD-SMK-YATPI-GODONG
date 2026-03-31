@@ -11,7 +11,7 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("siswa"); // 'siswa' or 'guru'
 
   // Form State
-  const [nis, setNis] = useState("");
+  const [nisn, setNisn] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,10 +32,10 @@ export default function LandingPage() {
 
   const handleSiswaSubmit = async (e) => {
     e.preventDefault();
-    if (!nis.trim()) return addToast("NIS tidak boleh kosong", "warning");
+    if (!nisn.trim()) return addToast("NISN tidak boleh kosong", "warning");
     setLoading(true);
     try {
-      await loginSiswa(nis.trim());
+      await loginSiswa(nisn.trim());
       addToast("Berhasil masuk sebagai Siswa", "success");
       navigate("/absensi");
     } catch (err) {
@@ -102,14 +102,14 @@ export default function LandingPage() {
             </h2>
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
-                NIS (Nomor Induk Siswa)
+                NISN (Nomor Induk Siswa Nasional)
               </label>
               <input
                 type="text"
                 className="w-full bg-[#0d0d25] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 transition"
                 placeholder="Misal: 2024001"
-                value={nis}
-                onChange={(e) => setNis(e.target.value)}
+                value={nisn}
+                onChange={(e) => setNisn(e.target.value)}
               />
             </div>
             <button

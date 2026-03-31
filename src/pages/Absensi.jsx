@@ -23,7 +23,7 @@ const LOC_STATUS = {
 
 export default function Absensi() {
   const navigate = useNavigate();
-  const { session, mandiriSession, isMandiriOpen, addRecord, logout } = useAppStore();
+  const { session, mandiriSession, isMandiriOpen, getAutoAttendanceStatus, addRecord, logout } = useAppStore();
   const { addToast } = useToast();
 
   const [status, setStatus] = useState("hadir");
@@ -95,10 +95,9 @@ export default function Absensi() {
     }
   }, [mandiriActive, detectLocation]);
 
-  // Jika status berubah dari hadir ke yang lain saat di luar area, tidak masalah
-  // Tapi jika milih hadir padahal di luar area, reset ke sakit
+  // Jika di luar area sekolah dan masih pilih 'hadir', reset ke 'sakit'
   useEffect(() => {
-    if (locStatus === LOC_STATUS.OUT_AREA && (status === 'hadir' || status === 'terlambat')) {
+    if (locStatus === LOC_STATUS.OUT_AREA && status === 'hadir') {
       setStatus('sakit');
       setFoto(null);
       stopCamera();
@@ -163,14 +162,14 @@ export default function Absensi() {
   const handleStatusChange = (e) => {
     const val = e.target.value;
 
-    // Blokir memilih hadir/terlambat jika di luar area dan bukan daring
-    if ((val === 'hadir' || val === 'terlambat') && !canAbsenHadir) {
+    // Blokir memilih hadir jika di luar area dan bukan daring
+    if (val === 'hadir' && !canAbsenHadir) {
       addToast('Kamu tidak berada di area sekolah. Pilih Sakit atau Izin.', 'warning');
       return;
     }
 
     setStatus(val);
-    if (val !== "hadir" && val !== "terlambat") {
+    if (val !== "hadir") {
       setFoto(null);
       stopCamera();
     }
@@ -179,8 +178,12 @@ export default function Absensi() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Tentukan status final berdasarkan waktu absen (otomatis)
+    // Jika siswa memilih 'hadir', status bisa berubah menjadi 'terlambat' sesuai jam
+    const finalStatus = status === 'hadir' ? getAutoAttendanceStatus() : status;
+
     // Validasi ulang lokasi sebelum submit
-    if ((status === 'hadir' || status === 'terlambat') && !canAbsenHadir) {
+    if (finalStatus === 'hadir' && !canAbsenHadir) {
       return addToast('Kamu tidak berada di area sekolah. Tidak bisa absen Hadir/Terlambat.', 'error');
     }
 
@@ -216,7 +219,7 @@ export default function Absensi() {
         const blob = new Blob(byteArrays, { type: contentType });
 
         // 2. Upload to Supabase Storage
-        const fileName = `${session.nis}_${Date.now()}.jpg`;
+        const fileName = `${session.nisn}_${Date.now()}.jpg`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('absensi-foto')
           .upload(fileName, blob);
@@ -231,12 +234,12 @@ export default function Absensi() {
         finalFotoUrl = publicUrl;
       }
 
-      // 4. Save Record to DB (sertakan data GPS)
+      // 4. Save Record to DB (gunakan finalStatus yang sudah ditentukan otomatis)
       await addRecord({
-        nis: session.nis,
+        nisn: session.nisn,
         nama: session.nama,
         kelas: session.kelas,
-        status,
+        status: finalStatus,   // ← otomatis: 'hadir' atau 'terlambat' berdasarkan jam
         keterangan,
         foto_url: finalFotoUrl,
         metode: isDaring ? 'siswa-daring' : 'siswa-form',
@@ -386,8 +389,12 @@ export default function Absensi() {
         <div className="w-full max-w-lg glass-card p-10 text-center animate-fade-in border-red-500/20">
           <div className="text-5xl mb-4">🔒</div>
           <h2 className="text-xl font-bold mb-2 text-red-400">Sesi Absensi Ditutup</h2>
-          <p className="text-sm text-slate-400">Guru belum membuka Sesi Absensi Mandiri untuk saat ini. Silakan tunggu intruksi dari wali kelas atau guru mata pelajaran Anda.</p>
-          <button onClick={() => window.location.reload()} className="mt-8 px-6 py-2 bg-indigo-600 rounded-lg text-sm font-semibold">Cek Ulang Status</button>
+          <p className="text-sm text-slate-400">Sesi absensi mandiri hanya dibuka otomatis pada pukul <strong className="text-slate-300">07:00 – 07:30 WIB</strong>. Pastikan kamu absen pada waktu tersebut.</p>
+          <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 space-y-1">
+            <p>🟢 <strong className="text-green-400">07:00 – 07:15</strong> → Status: <strong className="text-green-400">Hadir</strong></p>
+            <p>🟡 <strong className="text-yellow-400">07:16 – 07:30</strong> → Status: <strong className="text-yellow-400">Terlambat</strong></p>
+          </div>
+          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-indigo-600 rounded-lg text-sm font-semibold">Cek Ulang Status</button>
         </div>
       ) : (
         <div className="w-full max-w-lg glass-card animate-fade-in">
@@ -404,15 +411,22 @@ export default function Absensi() {
             {/* === STATUS LOKASI === */}
             {renderLocationStatus()}
 
+            {/* === INFO WAKTU ABSEN OTOMATIS === */}
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-300 space-y-1">
+              <p className="font-semibold text-indigo-300 mb-1">⏱️ Status Kehadiran Otomatis</p>
+              <p>🟢 <strong className="text-green-400">07:00 – 07:15</strong> → Hadir</p>
+              <p>🟡 <strong className="text-yellow-400">07:16 – 07:30</strong> → Terlambat</p>
+              <p className="text-slate-500 italic mt-1">Status akan ditentukan secara otomatis berdasarkan jam saat kamu menekan tombol kirim.</p>
+            </div>
+
             {/* === STATUS KEHADIRAN === */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">Status Kehadiran</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {[
                   { val: 'hadir', label: '✅ Hadir', color: 'border-[#10b981] bg-[#10b981]/10 text-[#10b981]', locked: !canAbsenHadir },
                   { val: 'sakit', label: '🤒 Sakit', color: 'border-[#f59e0b] bg-[#f59e0b]/10 text-[#f59e0b]', locked: false },
                   { val: 'izin', label: '📋 Izin', color: 'border-[#3b82f6] bg-[#3b82f6]/10 text-[#3b82f6]', locked: false },
-                  { val: 'terlambat', label: '⏰ Terlambat', color: 'border-[#f97316] bg-[#f97316]/10 text-[#f97316]', locked: !canAbsenHadir },
                 ].map(({ val, label, color, locked }) => (
                   <label
                     key={val}
@@ -441,12 +455,12 @@ export default function Absensi() {
               {/* Pesan peringatan di luar area */}
               {locStatus === LOC_STATUS.OUT_AREA && (
                 <p className="mt-2 text-xs text-red-400 flex items-center gap-1.5">
-                  <span>⚠️</span> Hadir & Terlambat dikunci karena kamu di luar area {SCHOOL_NAME}.
+                  <span>⚠️</span> Hadir dikunci karena kamu di luar area {SCHOOL_NAME}.
                 </p>
               )}
               {locStatus === LOC_STATUS.ERROR && (
                 <p className="mt-2 text-xs text-orange-400 flex items-center gap-1.5">
-                  <span>⚠️</span> Hadir & Terlambat dikunci karena GPS tidak dapat diakses.
+                  <span>⚠️</span> Hadir dikunci karena GPS tidak dapat diakses.
                 </p>
               )}
             </div>

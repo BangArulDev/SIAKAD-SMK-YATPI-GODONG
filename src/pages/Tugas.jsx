@@ -330,7 +330,7 @@ export default function Tugas() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-white">{p.nama}</div>
-                          <div className="text-xs text-indigo-300">{p.nis} · {p.kelas}</div>
+                          <div className="text-xs text-indigo-300">{p.nisn} · {p.kelas}</div>
                           <div className="text-xs text-slate-400 mt-1">
                             Dikumpulkan: {new Date(p.dikumpulkan_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </div>

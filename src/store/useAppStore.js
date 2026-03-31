@@ -72,62 +72,44 @@ const useAppStore = create(
 
       // --- AUTHENTICATION ---
       loginGuru: async (username, password) => {
-        // Since Supabase Auth usually uses Email, we might need to handle username/email conversion
-        // If the user uses username, we might need a workaround or just recommend email.
-        // For simplicity, let's assume they use email as the "username" input for now, 
-        // OR we use a edge function/table look up.
-        // Actually, SMK Yatpi might use username as dummy email: username@smkyatpi.sch.id
-        const email = username.includes('@') ? username : `${username}@smkyatpi.sch.id`;
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) throw error;
-
-        // Fetch profile
-        const { data: profile } = await supabase
+        // Login langsung via tabel profiles (tidak pakai Supabase Auth)
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', data.user.id)
+          .eq('username', username.trim())
+          .eq('password', password)
           .single();
 
-        if (profile) {
-          set({ session: { ...profile, email: data.user.email } });
-          return profile;
-        }
-        throw new Error('Profile not found');
+        if (error || !profile) throw new Error('Username atau password salah');
+
+        set({ session: profile });
+        return profile;
       },
 
-      loginSiswa: async (nis) => {
+      loginSiswa: async (nisn) => {
         const { data: student, error } = await supabase
           .from('students')
           .select('*')
-          .eq('nis', nis)
+          .eq('nisn', nisn)
           .single();
 
-        if (error || !student) throw new Error('NIS tidak terdaftar');
+        if (error || !student) throw new Error('NISN tidak terdaftar');
 
-        const sess = { ...student, role: 'siswa', id: student.nis };
+        const sess = { ...student, role: 'siswa', id: student.nisn };
         set({ session: sess });
         return sess;
       },
 
       logout: async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) console.error("Logout error:", error);
+        // Tidak pakai Supabase Auth — cukup hapus session lokal
         set({ session: null });
       },
 
       // --- TEACHERS (PROFILES) ---
       addTeacher: async (t) => {
-        // Teacher needs auth account. Since we can't create auth accounts easily without admin key,
-        // we'll instruct user to create auth users manually and then we link here, 
-        // OR we just insert into profiles if the user already exists.
-        // For bypass, we'll try to insert. This will fail if no auth user, 
-        // but it's the only way without a service role.
-        const { data, error } = await supabase.from('profiles').insert([t]).select().single();
+        // Generate UUID untuk id jika belum ada
+        const payload = { ...t, id: t.id || crypto.randomUUID() };
+        const { data, error } = await supabase.from('profiles').insert([payload]).select().single();
         if (error) throw error;
         set(state => ({ teachers: [...(state.teachers || []), data] }));
       },
@@ -195,7 +177,24 @@ const useAppStore = create(
         const opened = new Date(s.opened_at).getTime();
         if (Date.now() - opened > 8 * 60 * 60 * 1000) return false;
         if (s.tanggal !== getTodayDB()) return false;
+
+        // Sesi absensi mandiri hanya dibuka pada jam 07:00 - 07:30 WIB
+        const now = new Date();
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
+        const openMinute  = 7 * 60;       // 07:00
+        const closeMinute = 7 * 60 + 30;  // 07:30
+        if (totalMinutes < openMinute || totalMinutes >= closeMinute) return false;
+
         return true;
+      },
+
+      // Menentukan status kehadiran otomatis berdasarkan jam absen
+      // 07:00-07:15 → 'hadir', 07:16-07:30 → 'terlambat'
+      getAutoAttendanceStatus: () => {
+        const now = new Date();
+        const totalMinutes = now.getHours() * 60 + now.getMinutes();
+        const lateStart = 7 * 60 + 16; // 07:16
+        return totalMinutes >= lateStart ? 'terlambat' : 'hadir';
       },
 
       // --- RECORDS ---
@@ -204,7 +203,7 @@ const useAppStore = create(
         
         // Prevent duplicate today in cache first
         const records = get().records || [];
-        const exists = records.find(r => r.nis === rec.nis && r.tanggal === today);
+        const exists = records.find(r => r.nisn === rec.nisn && r.tanggal === today);
         if (exists) throw new Error('Siswa ini sudah diabsen hari ini');
 
         const newRec = {
@@ -245,25 +244,25 @@ const useAppStore = create(
       addStudent: async (s) => {
         const { data, error } = await supabase.from('students').insert([s]).select().single();
         if (error) {
-          if (error.code === '23505') throw new Error('NIS sudah terpakai');
+          if (error.code === '23505') throw new Error('NISN sudah terpakai');
           throw error;
         }
         set(state => ({ students: [...(state.students || []), data] }));
       },
 
-      updateStudent: async (nis, updates) => {
-        const { data, error } = await supabase.from('students').update(updates).eq('nis', nis).select().single();
+      updateStudent: async (nisn, updates) => {
+        const { data, error } = await supabase.from('students').update(updates).eq('nisn', nisn).select().single();
         if (error) throw error;
         set(state => ({
-          students: (state.students || []).map(s => s.nis === nis ? data : s)
+          students: (state.students || []).map(s => s.nisn === nisn ? data : s)
         }));
       },
 
-      deleteStudent: async (nis) => {
-        const { error } = await supabase.from('students').delete().eq('nis', nis);
+      deleteStudent: async (nisn) => {
+        const { error } = await supabase.from('students').delete().eq('nisn', nisn);
         if (error) throw error;
         set(state => ({
-          students: (state.students || []).filter(s => s.nis !== nis)
+          students: (state.students || []).filter(s => s.nisn !== nisn)
         }));
       },
 
@@ -315,7 +314,7 @@ const useAppStore = create(
         
         const payload = {
           ...data,
-          nis: session.nis,
+          nisn: session.nisn,
           nama: session.nama,
           kelas: session.kelas
         };
@@ -350,7 +349,7 @@ const useAppStore = create(
 
         if (students.length > 0) {
           await supabase.from('students').insert(students.map(s => ({
-            nis: s.nis, nama: s.nama, kelas: s.kelas
+            nisn: s.nisn, nama: s.nama, kelas: s.kelas
           })));
         }
 
