@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
+import {
+  CheckCircle2, HeartPulse, FileText, Clock, XCircle,
+  PenLine, Camera, ClipboardCheck, User, Hash, Loader2
+} from 'lucide-react';
 
 export default function Dashboard() {
   const { session, records = [], students = [], addRecord } = useAppStore();
@@ -56,12 +60,13 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Halo, {session?.nama || 'Guru'}</h1>
-          <p className="text-slate-400">Ringkasan absensi hari ini: {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <h1 className="text-2xl font-bold">Halo, <span className="text-gradient">{session?.nama || 'Guru'}</span> 👋</h1>
+          <p className="text-slate-400 text-sm mt-0.5">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowManualModal(true)} disabled={loading} className="px-4 py-2 bg-[#ffffff0d] hover:bg-[#ffffff1a] border border-white/10 rounded-lg transition font-medium text-sm flex items-center gap-2 text-white">
-            <span>✏️</span> Absen Manual
+          <button onClick={() => setShowManualModal(true)} disabled={loading} className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition font-semibold text-sm text-white">
+            <PenLine size={15} />
+            Absen Manual
           </button>
         </div>
       </div>
@@ -69,17 +74,21 @@ export default function Dashboard() {
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {[{ label: 'Hadir', val: stats.hadir, icon: '✅', color: 'text-[#10b981]' },
-          { label: 'Sakit', val: stats.sakit, icon: '🤒', color: 'text-[#f59e0b]' },
-          { label: 'Izin', val: stats.izin, icon: '📋', color: 'text-[#3b82f6]' },
-          { label: 'Terlambat', val: stats.terlambat, icon: '⏰', color: 'text-[#f97316]' },
-          { label: 'Alpa', val: stats.alpa, icon: '❌', color: 'text-[#ef4444]' }].map((s, i) => (
-          <div key={i} className="glass-card p-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl bg-white/5 ${s.color}`}>{s.icon}</div>
+        {[
+          { label: 'Hadir',     val: stats.hadir,     Icon: CheckCircle2, wrap: 'icon-green',  val_class: 'text-emerald-400' },
+          { label: 'Sakit',     val: stats.sakit,     Icon: HeartPulse,   wrap: 'icon-amber',  val_class: 'text-amber-400'   },
+          { label: 'Izin',      val: stats.izin,      Icon: FileText,     wrap: 'icon-blue',   val_class: 'text-blue-400'    },
+          { label: 'Terlambat', val: stats.terlambat, Icon: Clock,        wrap: 'icon-orange', val_class: 'text-orange-400'  },
+          { label: 'Alpa',      val: stats.alpa,      Icon: XCircle,      wrap: 'icon-red',    val_class: 'text-red-400'     },
+        ].map((s, i) => (
+          <div key={i} className="stat-card">
+            <div className="flex items-center gap-3 relative">
+              <div className={`icon-wrap icon-wrap-md ${s.wrap}`}>
+                <s.Icon size={18} strokeWidth={2} />
+              </div>
               <div>
-                <div className="text-slate-400 text-xs font-semibold uppercase">{s.label}</div>
-                <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
+                <div className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{s.label}</div>
+                <div className={`text-2xl font-black ${s.val_class}`}>{s.val}</div>
               </div>
             </div>
           </div>
@@ -89,19 +98,22 @@ export default function Dashboard() {
       {/* TABEL */}
       <div className="glass-card overflow-hidden">
         <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
-          <h2 className="font-semibold">Absensi Hari Ini</h2>
-          <span className="text-xs py-1 px-2 rounded-md bg-white/10 text-slate-300">{todayRecords.length} Siswa</span>
+          <div className="flex items-center gap-2">
+            <ClipboardCheck size={18} className="text-indigo-400" />
+            <h2 className="font-semibold">Absensi Hari Ini</h2>
+          </div>
+          <span className="badge badge-info">{todayRecords.length} Siswa</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-[#ffffff05] border-b border-white/5 text-slate-400">
               <tr>
-                <th className="px-4 py-3 font-medium">Waktu</th>
-                <th className="px-4 py-3 font-medium">Siswa</th>
-                <th className="px-4 py-3 font-medium">Kelas</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Ket</th>
-                <th className="px-4 py-3 font-medium">Metode</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Waktu</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Siswa</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Kelas</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Status</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Ket</th>
+                <th className="px-4 py-3 font-medium text-slate-400">Metode</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -121,11 +133,13 @@ export default function Dashboard() {
                   </td>
                   <td className="px-4 py-3 text-slate-300">{r.kelas}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                      ${r.status === 'hadir' ? 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20' :
-                        r.status === 'sakit' ? 'bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20' :
-                        r.status === 'izin' ? 'bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20' :
-                        'bg-[#f97316]/10 text-[#f97316] border border-[#f97316]/20'}`}>
+                    <span className={`badge ${
+                        r.status === 'hadir'     ? 'badge-success' :
+                        r.status === 'sakit'     ? 'badge-warning'  :
+                        r.status === 'izin'      ? 'badge-info'     :
+                        r.status === 'terlambat' ? 'badge-orange'   :
+                        'badge-danger'
+                      }`}>
                       {(r.status || '').toUpperCase()}
                     </span>
                   </td>
@@ -141,12 +155,15 @@ export default function Dashboard() {
       {/* MODALS */}
       {showManualModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <form onSubmit={handleManualAbsen} className="glass-card p-6 w-full max-w-md animate-fade-in">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span>✏️</span> Input Absen Manual</h2>
+          <form onSubmit={handleManualAbsen} className="glass-card p-6 w-full max-w-md animate-slide-up border border-indigo-500/20">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="icon-wrap icon-wrap-md icon-indigo"><PenLine size={18} /></div>
+              <h2 className="text-xl font-bold">Input Absen Manual</h2>
+            </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-1">NISN Siswa</label>
-                <input name="nisn" required type="text" className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none" placeholder="Ketik NISN" />
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5"><Hash size={13}/>NISN Siswa</label>
+                <input name="nisn" required type="text" className="input-field" placeholder="Ketik NISN siswa" />
               </div>
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Status Kehadiran</label>

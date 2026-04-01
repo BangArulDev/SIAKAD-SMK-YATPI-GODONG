@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
 import { supabase } from "../lib/supabase";
+import {
+  BookOpen, ClipboardList, LogOut, CheckCircle2, Clock,
+  AlertCircle, LayoutList, Camera, Image, FolderOpen,
+  FileText, Trash2, Upload, Send, Loader2, User, CalendarDays,
+  CheckCheck, Timer, Pin, X
+} from 'lucide-react';
 
 const TIPE_LABEL = {
-  teks: '📝 Jawaban Teks',
-  foto: '📸 Foto',
-  file: '📁 File Dokumen',
-  foto_atau_file: '📎 Foto atau File',
+  teks: 'Jawaban Teks',
+  foto: 'Foto',
+  file: 'File Dokumen',
+  foto_atau_file: 'Foto atau File',
 };
 
 export default function TugasSiswa() {
@@ -205,16 +211,23 @@ export default function TugasSiswa() {
   return (
     <div className="min-h-screen p-4 md:p-6">
       {/* TOP BAR */}
-      <div className="w-full max-w-2xl mx-auto flex items-center justify-between p-4 mb-5 border border-white/10 bg-[#080818]/60 backdrop-blur-md rounded-2xl">
-        <div>
-          <span className="font-bold flex items-center gap-2">📝 Tugas Siswa</span>
-          <span className="text-xs text-indigo-300">{session?.nama} · {session?.kelas}</span>
+      <div className="w-full max-w-2xl mx-auto flex items-center justify-between p-4 mb-5 border border-white/8 bg-[#06061a]/80 backdrop-blur-md rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="icon-wrap icon-wrap-sm icon-indigo"><BookOpen size={15} /></div>
+          <div>
+            <div className="font-bold text-sm text-white">Tugas Siswa</div>
+            <div className="text-xs text-indigo-300">{session?.nama} · {session?.kelas}</div>
+          </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => navigate('/absensi')} className="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10">
-            📋 Absensi
+          <button onClick={() => navigate('/absensi')}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition border border-white/10">
+            <ClipboardList size={13} /> Absensi
           </button>
-          <button onClick={() => { stopCamera(); logout(); navigate('/'); }} className="text-xl" title="Keluar">🚪</button>
+          <button onClick={() => { stopCamera(); logout(); navigate('/'); }}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition" title="Keluar">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
 
@@ -222,16 +235,14 @@ export default function TugasSiswa() {
         {/* STATS */}
         <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Total', val: stats.total, color: 'text-white', bg: 'bg-white/5', status: 'semua' },
-            { label: 'Selesai', val: stats.sudah, color: 'text-green-400', bg: 'bg-green-500/10', status: 'sudah' },
-            { label: 'Aktif', val: stats.belum, color: 'text-indigo-400', bg: 'bg-indigo-500/10', status: 'belum' },
-            { label: 'Lewat', val: stats.terlambat, color: 'text-red-400', bg: 'bg-red-500/10', status: 'terlambat' },
+            { label: 'Total',  val: stats.total,     Icon: LayoutList,   color: 'text-white',       bg: 'bg-white/5',         status: 'semua'    },
+            { label: 'Selesai',val: stats.sudah,     Icon: CheckCircle2, color: 'text-green-400',   bg: 'bg-green-500/8',     status: 'sudah'    },
+            { label: 'Aktif',  val: stats.belum,     Icon: Clock,        color: 'text-indigo-400',  bg: 'bg-indigo-500/8',    status: 'belum'    },
+            { label: 'Lewat',  val: stats.terlambat, Icon: AlertCircle,  color: 'text-red-400',     bg: 'bg-red-500/8',       status: 'terlambat'},
           ].map(s => (
-            <button
-              key={s.status}
-              onClick={() => setFilterStatus(s.status)}
-              className={`${s.bg} rounded-xl p-3 text-center border transition ${filterStatus === s.status ? 'border-indigo-500' : 'border-white/5 hover:border-white/20'}`}
-            >
+            <button key={s.status} onClick={() => setFilterStatus(s.status)}
+              className={`${s.bg} rounded-xl p-3 text-center border transition ${filterStatus === s.status ? 'border-indigo-500' : 'border-white/5 hover:border-white/20'}`}>
+              <s.Icon size={18} className={`mx-auto mb-1 ${s.color}`} strokeWidth={filterStatus === s.status ? 2.5 : 1.8} />
               <div className={`text-xl font-black ${s.color}`}>{s.val}</div>
               <div className="text-xs text-slate-400">{s.label}</div>
             </button>
@@ -241,7 +252,9 @@ export default function TugasSiswa() {
         {/* TUGAS LIST */}
         {filteredTugas.length === 0 ? (
           <div className="glass-card p-10 text-center">
-            <div className="text-4xl mb-3">🎉</div>
+            <div className="inline-flex items-center justify-center w-16 h-16 icon-wrap icon-indigo rounded-2xl mb-4">
+              <BookOpen size={28} strokeWidth={1.5} />
+            </div>
             <h3 className="font-bold mb-1">
               {filterStatus === 'sudah' ? 'Belum ada tugas yang selesai' :
                filterStatus === 'belum' ? 'Tidak ada tugas aktif' :
@@ -262,12 +275,16 @@ export default function TugasSiswa() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-semibold ${
                       kumpulan ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                      expired ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                      'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                      expired  ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
                     }`}>
-                      {kumpulan ? '✅ Sudah Dikumpulkan' : expired ? '⌛ Waktu Habis' : '📌 Perlu Dikumpulkan'}
+                      {kumpulan
+                        ? <><CheckCircle2 size={11} /> Sudah Dikumpulkan</>
+                        : expired
+                        ? <><Timer size={11} /> Waktu Habis</>
+                        : <><Pin size={11} /> Perlu Dikumpulkan</>}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">
                       {TIPE_LABEL[t.tipe_upload]}
@@ -283,13 +300,17 @@ export default function TugasSiswa() {
                       {kumpulan.nilai_guru}
                     </div>
                   ) : (
-                    <div className="text-2xl">{kumpulan ? '✅' : expired ? '❌' : '⏳'}</div>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      kumpulan ? 'bg-green-500/10 text-green-400' : expired ? 'bg-red-500/10 text-red-400' : 'bg-indigo-500/10 text-indigo-400'
+                    }`}>
+                      {kumpulan ? <CheckCheck size={16} /> : expired ? <AlertCircle size={16} /> : <Clock size={16} />}
+                    </div>
                   )}
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-                <span>👨‍🏫 {t.guru_nama}</span>
-                <span>📅 {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
+                <span className="flex items-center gap-1.5"><User size={11} /> {t.guru_nama}</span>
+                <span className="flex items-center gap-1.5"><CalendarDays size={11} /> {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
               </div>
             </div>
           );
@@ -307,7 +328,9 @@ export default function TugasSiswa() {
                   <h2 className="text-xl font-bold">{selectedTugas.judul_tugas}</h2>
                   <p className="text-indigo-300 text-sm">{selectedTugas.mata_pelajaran}</p>
                 </div>
-                <button onClick={resetForm} className="text-slate-400 hover:text-white text-2xl">×</button>
+                <button onClick={resetForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-white/8 hover:text-white transition">
+                  <X size={18} />
+                </button>
               </div>
               {selectedTugas.deskripsi && (
                 <div className="mt-3 p-3 bg-white/5 rounded-lg text-sm text-slate-300 whitespace-pre-wrap">
@@ -315,8 +338,8 @@ export default function TugasSiswa() {
                 </div>
               )}
               <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
-                <span>📅 Deadline: {selectedTugas.deadline ? new Date(selectedTugas.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
-                <span>📎 {TIPE_LABEL[selectedTugas.tipe_upload]}</span>
+                <span className="flex items-center gap-1"><CalendarDays size={11} /> Deadline: {selectedTugas.deadline ? new Date(selectedTugas.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
+                <span className="flex items-center gap-1"><FileText size={11} /> {TIPE_LABEL[selectedTugas.tipe_upload]}</span>
               </div>
             </div>
 
@@ -327,7 +350,9 @@ export default function TugasSiswa() {
                 return (
                   <div className="p-6">
                     <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl mb-4">
-                      <div className="font-semibold text-green-400 mb-1">✅ Tugas Sudah Dikumpulkan</div>
+                      <div className="flex items-center gap-2 font-semibold text-green-400 mb-1">
+                        <CheckCheck size={16} /> Tugas Sudah Dikumpulkan
+                      </div>
                       <div className="text-xs text-slate-400">
                         {new Date(kumpulan.dikumpulkan_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -338,7 +363,7 @@ export default function TugasSiswa() {
                     )}
                     {kumpulan.file_name && !kumpulan.file_type?.startsWith('image/') && (
                       <div className="flex items-center gap-2 p-3 bg-white/5 rounded-lg text-sm text-indigo-300 mb-3">
-                        <span>📁</span> {kumpulan.file_name}
+                        <FolderOpen size={16} /> {kumpulan.file_name}
                       </div>
                     )}
                     {kumpulan.nilai_guru !== null && kumpulan.nilai_guru !== undefined ? (
@@ -354,8 +379,8 @@ export default function TugasSiswa() {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-xs text-yellow-400">
-                        ⏳ Menunggu penilaian dari guru...
+                      <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-xs text-yellow-400">
+                        <Loader2 size={13} className="animate-spin" /> Menunggu penilaian dari guru...
                       </div>
                     )}
                   </div>
@@ -367,7 +392,9 @@ export default function TugasSiswa() {
                 return (
                   <div className="p-6">
                     <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
-                      <div className="text-3xl mb-2">⌛</div>
+                      <div className="inline-flex items-center justify-center w-12 h-12 icon-wrap icon-red rounded-2xl mb-3">
+                        <Timer size={22} strokeWidth={1.5} />
+                      </div>
                       <div className="font-semibold text-red-400">Waktu Pengumpulan Sudah Habis</div>
                       <div className="text-sm text-slate-400 mt-1">Tugas ini tidak dapat dikumpulkan lagi.</div>
                     </div>
@@ -377,7 +404,9 @@ export default function TugasSiswa() {
 
               return (
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                  <h3 className="font-semibold text-slate-200">📤 Form Pengumpulan Tugas</h3>
+                  <div className="flex items-center gap-2 font-semibold text-slate-200">
+                    <Upload size={16} className="text-indigo-400" /> Form Pengumpulan Tugas
+                  </div>
 
                   {/* TEKS */}
                   {(selectedTugas.tipe_upload === 'teks') && (
@@ -404,18 +433,22 @@ export default function TugasSiswa() {
                         <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-indigo-500/30 bg-black">
                           <video ref={videoRef} className="w-full h-full object-cover -scale-x-100" playsInline autoPlay muted />
                           <div className="absolute inset-x-0 bottom-3 flex justify-center">
-                            <button type="button" onClick={capturePhoto} className="w-14 h-14 bg-white/30 hover:bg-white border-4 border-white/60 rounded-full transition shadow-lg backdrop-blur-md flex items-center justify-center text-2xl">📸</button>
+                            <button type="button" onClick={capturePhoto}
+                              className="w-14 h-14 bg-white/20 hover:bg-white/40 border-4 border-white/60 rounded-full transition shadow-lg backdrop-blur-md flex items-center justify-center">
+                              <Camera size={22} className="text-white" />
+                            </button>
                           </div>
                         </div>
                       )}
                       {!foto && !isCameraActive && (
                         <div className="flex gap-2">
-                          <div onClick={startCamera} className="flex-1 py-8 border-2 border-dashed border-indigo-500/40 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/5 transition cursor-pointer">
-                            <span className="text-2xl mb-1">📷</span>
+                          <div onClick={startCamera}
+                            className="flex-1 py-8 border-2 border-dashed border-indigo-500/40 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/5 transition cursor-pointer gap-1.5">
+                            <Camera size={24} strokeWidth={1.5} />
                             <span className="text-sm font-semibold">Buka Kamera</span>
                           </div>
-                          <label className="flex-1 py-8 border-2 border-dashed border-indigo-500/40 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/5 transition cursor-pointer">
-                            <span className="text-2xl mb-1">🖼️</span>
+                          <label className="flex-1 py-8 border-2 border-dashed border-indigo-500/40 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/5 transition cursor-pointer gap-1.5">
+                            <Image size={24} strokeWidth={1.5} />
                             <span className="text-sm font-semibold">Pilih dari Galeri</span>
                             <input type="file" accept="image/*" className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
@@ -427,7 +460,10 @@ export default function TugasSiswa() {
                       {foto && (
                         <div className="relative rounded-xl overflow-hidden border border-indigo-500/30">
                           <img src={foto} alt="Foto Tugas" className="w-full object-cover max-h-56" />
-                          <button type="button" onClick={() => setFoto(null)} className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg">🗑️ Hapus</button>
+                          <button type="button" onClick={() => setFoto(null)}
+                            className="absolute top-2 right-2 flex items-center gap-1 bg-red-500/80 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg">
+                            <Trash2 size={12} /> Hapus
+                          </button>
                         </div>
                       )}
                     </div>
@@ -441,7 +477,7 @@ export default function TugasSiswa() {
                       </label>
                       {!file ? (
                         <label className="flex items-center gap-3 p-4 border-2 border-dashed border-indigo-500/40 rounded-xl cursor-pointer hover:bg-indigo-500/5 transition">
-                          <span className="text-3xl">📁</span>
+                          <FolderOpen size={28} className="text-indigo-400" strokeWidth={1.5} />
                           <div>
                             <div className="font-semibold text-indigo-300">Klik untuk pilih file</div>
                             <div className="text-xs text-slate-400">PDF, Word, PowerPoint, Excel, dll (maks. 10MB)</div>
@@ -453,9 +489,12 @@ export default function TugasSiswa() {
                         </label>
                       ) : (
                         <div className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
-                          <span className="text-2xl">📄</span>
+                          <FolderOpen size={20} className="text-indigo-400 shrink-0" />
                           <span className="flex-1 text-sm font-semibold text-white truncate">{file.name}</span>
-                          <button type="button" onClick={() => setFile(null)} className="text-red-400 hover:text-red-300 transition">🗑️</button>
+                          <button type="button" onClick={() => setFile(null)}
+                            className="text-red-400 hover:text-red-300 transition p-1">
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -473,12 +512,13 @@ export default function TugasSiswa() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg ${isSubmitting ? 'bg-indigo-500/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500'}`}
-                  >
-                    {isSubmitting ? '⏳ Mengirim...' : '📤 Kumpulkan Tugas'}
+                  <button type="submit" disabled={isSubmitting}
+                    className={`w-full py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg ${
+                      isSubmitting ? 'bg-indigo-500/40 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-500/30'
+                    }`}>
+                    {isSubmitting
+                      ? <><Loader2 size={18} className="animate-spin" /> Mengirim...</>
+                      : <><Send size={18} /> Kumpulkan Tugas</>}
                   </button>
                 </form>
               );

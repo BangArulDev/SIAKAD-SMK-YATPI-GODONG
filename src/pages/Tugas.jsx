@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
+import {
+  Plus, Loader2, BookOpen, Pause, Play, Trash2, CalendarDays,
+  FileText, FolderOpen, Inbox, Award, Search, FilePlus2
+} from 'lucide-react';
 
 const TIPE_UPLOAD_OPTIONS = [
-  { value: 'teks', label: '📝 Teks / Jawaban Tertulis' },
-  { value: 'foto', label: '📸 Foto (Kamera atau Galeri)' },
-  { value: 'file', label: '📁 File Dokumen (PDF, Word, dll)' },
-  { value: 'foto_atau_file', label: '📎 Foto atau File (Bebas)' },
+  { value: 'teks',          label: 'Teks / Jawaban Tertulis' },
+  { value: 'foto',          label: 'Foto (Kamera atau Galeri)' },
+  { value: 'file',          label: 'File Dokumen (PDF, Word, dll)' },
+  { value: 'foto_atau_file',label: 'Foto atau File (Bebas)' },
 ];
 
 export default function Tugas() {
@@ -108,38 +112,47 @@ export default function Tugas() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">📝 Manajemen Tugas</h1>
-          <p className="text-slate-400">Buat dan kelola tugas untuk siswa seperti di Google Classroom</p>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            <div className="icon-wrap icon-wrap-md icon-indigo"><BookOpen size={18} /></div>
+            Manajemen Tugas
+          </h1>
+          <p className="text-slate-400 text-sm mt-0.5">Buat dan kelola tugas untuk siswa</p>
         </div>
         <button
           onClick={() => setShowFormModal(true)}
           disabled={loading}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition font-medium text-sm flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition font-medium text-sm shadow-lg shadow-indigo-500/20"
         >
-          {loading ? '⏳' : '➕'} {loading ? 'Memproses...' : 'Buat Tugas Baru'}
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+          {loading ? 'Memproses...' : 'Buat Tugas Baru'}
         </button>
       </div>
 
       {/* SEARCH */}
       <div className="flex gap-3">
-        <input
-          type="text"
-          placeholder="Cari tugas berdasarkan judul atau mata pelajaran..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 bg-[#0d0d25] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
-        />
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Cari tugas berdasarkan judul atau mata pelajaran..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full bg-[#0d0d25] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+          />
+        </div>
       </div>
 
       {/* TUGAS LIST */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredTugas.length === 0 ? (
           <div className="lg:col-span-2 glass-card p-12 flex flex-col items-center text-center">
-            <div className="text-5xl mb-4">📭</div>
+            <div className="inline-flex items-center justify-center w-16 h-16 icon-wrap icon-indigo rounded-2xl mb-5">
+              <Inbox size={28} strokeWidth={1.5} />
+            </div>
             <h3 className="font-bold text-lg mb-2">Belum Ada Tugas</h3>
             <p className="text-slate-400 text-sm mb-6">Klik tombol "Buat Tugas Baru" di atas untuk mulai memberikan tugas ke siswa.</p>
-            <button onClick={() => setShowFormModal(true)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition">
-              Buat Tugas Pertama
+            <button onClick={() => setShowFormModal(true)} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition">
+              <FilePlus2 size={16} /> Buat Tugas Pertama
             </button>
           </div>
         ) : filteredTugas.map(t => {
@@ -155,13 +168,19 @@ export default function Tugas() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                      !t.isActive ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' :
-                      deadlineLewat ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                      'bg-green-500/10 text-green-400 border-green-500/20'
-                    }`}>
-                      {!t.is_active ? '⏸ Nonaktif' : deadlineLewat ? '⏰ Deadline Lewat' : '✅ Aktif'}
+                  {!t.is_active ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border bg-slate-500/10 text-slate-400 border-slate-500/20">
+                      <Pause size={10} /> Nonaktif
                     </span>
+                  ) : deadlineLewat ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border bg-red-500/10 text-red-400 border-red-500/20">
+                      <CalendarDays size={10} /> Deadline Lewat
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border bg-green-500/10 text-green-400 border-green-500/20">
+                      <Play size={10} /> Aktif
+                    </span>
+                  )}
                     <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                       {t.kelas === 'Semua' ? 'Semua Kelas' : t.kelas}
                     </span>
@@ -173,10 +192,10 @@ export default function Tugas() {
                   <button
                     onClick={() => handleToggleActive(t)}
                     disabled={loading}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 transition"
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
                     title={t.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   >
-                    {t.is_active ? '⏸' : '▶️'}
+                    {t.is_active ? <Pause size={14} /> : <Play size={14} />}
                   </button>
                   <button
                     onClick={() => handleDelete(t.id)}
@@ -184,7 +203,7 @@ export default function Tugas() {
                     className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
                     title="Hapus Tugas"
                   >
-                    🗑️
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -192,8 +211,9 @@ export default function Tugas() {
               {t.deskripsi && <p className="text-sm text-slate-300 mb-3 line-clamp-2">{t.deskripsi}</p>}
 
               <div className="flex items-center justify-between text-xs text-slate-400 mt-3 pt-3 border-t border-white/5">
-                <div className="flex items-center gap-3">
-                  <span>📅 {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays size={12} />
+                  {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-indigo-300">{pList.length}/{siswaKelas} dikumpulkan</span>
@@ -217,7 +237,10 @@ export default function Tugas() {
       {showFormModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <form onSubmit={handleSubmitTugas} className="glass-card p-6 w-full max-w-lg animate-fade-in border border-indigo-500/30 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-5 flex items-center gap-2">➕ Buat Tugas Baru</h2>
+            <h2 className="text-xl font-bold mb-5 flex items-center gap-3">
+              <div className="icon-wrap icon-wrap-md icon-indigo"><FilePlus2 size={18} /></div>
+              Buat Tugas Baru
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Judul Tugas <span className="text-red-400">*</span></label>
@@ -284,13 +307,13 @@ export default function Tugas() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition font-medium">Batal</button>
-              <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
-                {loading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
-                {loading ? "Memproses..." : "Buat Tugas"}
-              </button>
-            </div>
+                <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 transition font-medium">Batal</button>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
+                  {loading ? <Loader2 size={15} className="animate-spin" /> : null}
+                  {loading ? 'Memproses...' : 'Buat Tugas'}
+                </button>
+              </div>
           </form>
         </div>
       )}
@@ -311,8 +334,8 @@ export default function Tugas() {
                 <p className="mt-3 text-sm text-slate-300 bg-white/5 rounded-lg p-3">{selectedTugas.deskripsi}</p>
               )}
               <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
-                <span>📅 Deadline: {selectedTugas.deadline ? new Date(selectedTugas.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
-                <span>📎 Tipe: {TIPE_UPLOAD_OPTIONS.find(o => o.value === selectedTugas.tipe_upload)?.label}</span>
+                <span className="flex items-center gap-1"><CalendarDays size={11} /> Deadline: {selectedTugas.deadline ? new Date(selectedTugas.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tanpa batas'}</span>
+                <span className="flex items-center gap-1"><FileText size={11} /> Tipe: {TIPE_UPLOAD_OPTIONS.find(o => o.value === selectedTugas.tipe_upload)?.label}</span>
               </div>
             </div>
 
@@ -320,8 +343,10 @@ export default function Tugas() {
               <h3 className="font-semibold mb-4">Daftar Pengumpulan ({getPengumpulanForTugas(selectedTugas.id).length} siswa)</h3>
               {getPengumpulanForTugas(selectedTugas.id).length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
-                  <div className="text-3xl mb-2">📭</div>
-                  Belum ada siswa yang mengumpulkan
+                  <div className="inline-flex items-center justify-center w-12 h-12 icon-wrap icon-indigo rounded-2xl mb-3">
+                    <Inbox size={22} strokeWidth={1.5} />
+                  </div>
+                  <div>Belum ada siswa yang mengumpulkan</div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -345,10 +370,10 @@ export default function Tugas() {
                           )}
                           {p.file_name && !p.file_type?.startsWith('image/') && (
                             <div className="mt-2 flex items-center gap-2 text-sm text-indigo-300">
-                              <span>📁</span> {p.file_name}
+                              <FolderOpen size={14} /> {p.file_name}
                             </div>
                           )}
-                          {p.catatan && <div className="text-xs text-slate-400 mt-1 italic">📝 Catatan: {p.catatan}</div>}
+                          {p.catatan && <div className="text-xs text-slate-400 mt-1 italic flex items-center gap-1"><FileText size={10} /> Catatan: {p.catatan}</div>}
                         </div>
                         <div className="text-right shrink-0">
                           {p.nilai_guru !== null ? (
@@ -384,7 +409,10 @@ export default function Tugas() {
       {showNilaiModal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <form onSubmit={handleNilai} className="glass-card p-6 w-full max-w-sm animate-fade-in border border-indigo-500/30">
-            <h2 className="text-lg font-bold mb-4">🏆 Beri Nilai - {showNilaiModal.nama}</h2>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-3">
+              <div className="icon-wrap icon-wrap-sm icon-amber"><Award size={16} /></div>
+              Beri Nilai — {showNilaiModal.nama}
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Nilai (0-100)</label>
@@ -408,8 +436,8 @@ export default function Tugas() {
             <div className="flex gap-3 mt-5">
               <button type="button" onClick={() => setShowNilaiModal(null)} className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
               <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
-                {loading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
-                {loading ? "Memproses..." : "Simpan Nilai"}
+                {loading ? <Loader2 size={15} className="animate-spin" /> : null}
+                {loading ? 'Memproses...' : 'Simpan Nilai'}
               </button>
             </div>
           </form>

@@ -10,6 +10,11 @@ import {
   SCHOOL_NAME,
   SCHOOL_RADIUS_METERS,
 } from "../lib/schoolConfig";
+import {
+  ClipboardList, BookOpen, LogOut, Lock, MapPin, Wifi,
+  Loader2, AlertTriangle, XCircle, RefreshCw, CheckCircle2,
+  Camera, RotateCcw, Send, Clock, CheckCheck, MapPinOff
+} from 'lucide-react';
 
 // Status validasi lokasi
 const LOC_STATUS = {
@@ -262,15 +267,17 @@ export default function Absensi() {
   if (success) {
     return (
       <div className="flex items-center justify-center min-h-screen p-6">
-        <div className="glass-card w-full max-w-md p-10 shadow-lg text-center border-[#10b981]/30">
-          <div className="text-5xl mb-6">✅</div>
-          <h1 className="text-2xl font-bold mb-2 text-[#10b981]">Absensi Berhasil</h1>
-          <p className="text-sm text-slate-300 mb-8">Data kehadiran Anda telah tercatat ke dalam sistem.</p>
+        <div className="glass-card w-full max-w-md p-10 shadow-lg text-center border border-emerald-500/30">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl icon-wrap icon-green mb-6">
+            <CheckCheck size={40} strokeWidth={2} />
+          </div>
+          <h1 className="text-2xl font-bold mb-2 text-emerald-400">Absensi Berhasil!</h1>
+          <p className="text-sm text-slate-400 mb-8">Data kehadiran kamu telah tercatat ke dalam sistem.</p>
           <button
             onClick={() => { logout(); navigate("/"); }}
-            className="w-full py-3 bg-[#ffffff0d] hover:bg-[#ffffff1a] rounded-lg font-semibold transition border border-white/10"
+            className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold transition border border-white/10 flex items-center justify-center gap-2"
           >
-            Keluar Sesi
+            <LogOut size={16} /> Keluar Sesi
           </button>
         </div>
       </div>
@@ -282,7 +289,7 @@ export default function Absensi() {
     if (isDaring) {
       return (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
-          <span className="text-xl">🌐</span>
+          <div className="icon-wrap icon-wrap-sm icon-blue"><Wifi size={14} /></div>
           <div>
             <div className="text-sm font-semibold text-blue-300">Mode Daring Aktif</div>
             <div className="text-xs text-slate-400">Validasi lokasi dilewati — kamu bisa absen dari mana saja.</div>
@@ -296,7 +303,7 @@ export default function Absensi() {
     if (locStatus === LOC_STATUS.LOADING) {
       return (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-          <div className="w-5 h-5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin shrink-0" />
+          <Loader2 size={18} className="text-indigo-400 animate-spin shrink-0" />
           <div>
             <div className="text-sm font-semibold text-slate-200">Mendeteksi Lokasi...</div>
             <div className="text-xs text-slate-400">Pastikan GPS aktif dan izin lokasi diberikan.</div>
@@ -308,19 +315,16 @@ export default function Absensi() {
     if (locStatus === LOC_STATUS.IN_AREA) {
       return (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-          <span className="text-xl shrink-0">📍</span>
+          <div className="icon-wrap icon-wrap-sm icon-green shrink-0"><MapPin size={14} /></div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-emerald-400">Lokasi Terverifikasi ✓</div>
+            <div className="text-sm font-semibold text-emerald-400">Lokasi Terverifikasi</div>
             <div className="text-xs text-slate-400 truncate">
-              Kamu berada ± {locDistance}m dari {SCHOOL_NAME} (dalam radius {SCHOOL_RADIUS_METERS}m)
+              ±{locDistance}m dari {SCHOOL_NAME} (radius {SCHOOL_RADIUS_METERS}m)
             </div>
           </div>
-          <button
-            type="button"
-            onClick={detectLocation}
-            className="shrink-0 px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg transition text-slate-300"
-          >
-            🔄
+          <button type="button" onClick={detectLocation}
+            className="shrink-0 p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-slate-300">
+            <RefreshCw size={13} />
           </button>
         </div>
       );
@@ -329,19 +333,16 @@ export default function Absensi() {
     if (locStatus === LOC_STATUS.OUT_AREA) {
       return (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
-          <span className="text-xl shrink-0">⚠️</span>
+          <div className="icon-wrap icon-wrap-sm icon-red shrink-0"><MapPinOff size={14} /></div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-red-400">Di Luar Area Sekolah</div>
             <div className="text-xs text-slate-400">
-              Kamu berjarak ±{locDistance}m dari {SCHOOL_NAME}. Absen Hadir/Terlambat tidak tersedia.
+              ±{locDistance}m dari {SCHOOL_NAME}. Hadir/Terlambat tidak tersedia.
             </div>
           </div>
-          <button
-            type="button"
-            onClick={detectLocation}
-            className="shrink-0 px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg transition text-slate-300"
-          >
-            🔄
+          <button type="button" onClick={detectLocation}
+            className="shrink-0 p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-slate-300">
+            <RefreshCw size={13} />
           </button>
         </div>
       );
@@ -350,16 +351,13 @@ export default function Absensi() {
     if (locStatus === LOC_STATUS.ERROR) {
       return (
         <div className="flex items-start gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
-          <span className="text-xl shrink-0">❌</span>
+          <div className="icon-wrap icon-wrap-sm icon-orange shrink-0"><XCircle size={14} /></div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-orange-400">Gagal Akses Lokasi</div>
             <div className="text-xs text-slate-400 mt-0.5">{locError}</div>
-            <button
-              type="button"
-              onClick={detectLocation}
-              className="mt-2 px-3 py-1 text-xs bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 rounded-lg transition text-orange-300 font-semibold"
-            >
-              Coba Lagi
+            <button type="button" onClick={detectLocation}
+              className="mt-2 flex items-center gap-1 px-3 py-1 text-xs bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 rounded-lg transition text-orange-300 font-semibold">
+              <RefreshCw size={11} /> Coba Lagi
             </button>
           </div>
         </div>
@@ -372,51 +370,82 @@ export default function Absensi() {
   // === RENDER: Main ===
   return (
     <div className="min-h-screen p-4 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-lg flex items-center justify-between p-4 mb-4 border border-white/10 bg-[#080818]/60 backdrop-blur-md rounded-2xl">
-        <div className="flex flex-col">
-          <span className="font-bold flex items-center gap-2">📝 Form Absensi Siswa</span>
-          <span className="text-xs text-indigo-300">{session?.nama} ({session?.kelas})</span>
+      {/* TOP BAR */}
+      <div className="w-full max-w-lg flex items-center justify-between p-4 mb-4 border border-white/8 bg-[#06061a]/80 backdrop-blur-md rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="icon-wrap icon-wrap-sm icon-indigo"><ClipboardList size={15} /></div>
+          <div>
+            <div className="font-bold text-sm text-white">Form Absensi</div>
+            <div className="text-xs text-indigo-300">{session?.nama} · {session?.kelas}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/tugas-siswa')} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition">
-            📝 Tugas
+          <button onClick={() => navigate('/tugas-siswa')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition">
+            <BookOpen size={13} /> Tugas
           </button>
-          <button onClick={() => { stopCamera(); logout(); navigate("/"); }} className="text-xl">🚪</button>
+          <button onClick={() => { stopCamera(); logout(); navigate("/"); }}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
 
       {!mandiriActive ? (
-        <div className="w-full max-w-lg glass-card p-10 text-center animate-fade-in border-red-500/20">
-          <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-bold mb-2 text-red-400">Sesi Absensi Ditutup</h2>
-          <p className="text-sm text-slate-400">Sesi absensi mandiri hanya dibuka otomatis pada pukul <strong className="text-slate-300">07:00 – 07:30 WIB</strong>. Pastikan kamu absen pada waktu tersebut.</p>
-          <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 space-y-1">
-            <p>🟢 <strong className="text-green-400">07:00 – 07:15</strong> → Status: <strong className="text-green-400">Hadir</strong></p>
-            <p>🟡 <strong className="text-yellow-400">07:16 – 07:30</strong> → Status: <strong className="text-yellow-400">Terlambat</strong></p>
+        <div className="w-full max-w-lg glass-card p-10 text-center animate-fade-in border border-red-500/20">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl icon-wrap icon-red mb-5">
+            <Lock size={28} strokeWidth={1.8} />
           </div>
-          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-indigo-600 rounded-lg text-sm font-semibold">Cek Ulang Status</button>
+          <h2 className="text-xl font-bold mb-2 text-red-400">Sesi Absensi Ditutup</h2>
+          <p className="text-sm text-slate-400">Sesi absensi hanya dibuka otomatis pada pukul <strong className="text-slate-300">07:00 – 07:30 WIB</strong>.</p>
+          <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+              <span><strong className="text-green-400">07:00 – 07:15</strong> → Status: <strong className="text-green-400">Hadir</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+              <span><strong className="text-yellow-400">07:16 – 07:30</strong> → Status: <strong className="text-yellow-400">Terlambat</strong></span>
+            </div>
+          </div>
+          <button onClick={() => window.location.reload()}
+            className="mt-6 btn-primary text-sm">
+            <RefreshCw size={14} /> Cek Ulang Status
+          </button>
         </div>
       ) : (
         <div className="w-full max-w-lg glass-card animate-fade-in">
-          <div className="p-6 border-b border-white/10 text-center bg-indigo-500/5">
-            <h1 className="text-xl font-bold mb-1">Materi: {mandiriSession?.materi}</h1>
+          <div className="p-5 border-b border-white/10 bg-indigo-500/5">
+            <h1 className="text-lg font-bold mb-0.5">Materi: {mandiriSession?.materi}</h1>
             <p className="text-xs text-slate-400">{mandiriSession?.deskripsi || 'Sesi mandiri aktif'}</p>
             {isDaring && (
-              <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">🌐 MODE DARING</span>
+              <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+                <Wifi size={11} /> MODE DARING
+              </span>
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-5 space-y-4">
 
             {/* === STATUS LOKASI === */}
             {renderLocationStatus()}
 
-            {/* === INFO WAKTU ABSEN OTOMATIS === */}
-            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-300 space-y-1">
-              <p className="font-semibold text-indigo-300 mb-1">⏱️ Status Kehadiran Otomatis</p>
-              <p>🟢 <strong className="text-green-400">07:00 – 07:15</strong> → Hadir</p>
-              <p>🟡 <strong className="text-yellow-400">07:16 – 07:30</strong> → Terlambat</p>
-              <p className="text-slate-500 italic mt-1">Status akan ditentukan secara otomatis berdasarkan jam saat kamu menekan tombol kirim.</p>
+            {/* === INFO WAKTU OTOMATIS === */}
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-300">
+              <div className="flex items-center gap-1.5 font-semibold text-indigo-300 mb-2">
+                <Clock size={13} /> Status Kehadiran Otomatis
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  <span><strong className="text-green-400">07:00 – 07:15</strong> → Hadir</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                  <span><strong className="text-yellow-400">07:16 – 07:30</strong> → Terlambat</span>
+                </div>
+              </div>
+              <p className="text-slate-500 italic mt-2">Status ditentukan otomatis saat menekan tombol kirim.</p>
             </div>
 
             {/* === STATUS KEHADIRAN === */}
@@ -424,67 +453,76 @@ export default function Absensi() {
               <label className="block text-sm font-semibold text-slate-300 mb-3">Status Kehadiran</label>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { val: 'hadir', label: '✅ Hadir', color: 'border-[#10b981] bg-[#10b981]/10 text-[#10b981]', locked: !canAbsenHadir },
-                  { val: 'sakit', label: '🤒 Sakit', color: 'border-[#f59e0b] bg-[#f59e0b]/10 text-[#f59e0b]', locked: false },
-                  { val: 'izin', label: '📋 Izin', color: 'border-[#3b82f6] bg-[#3b82f6]/10 text-[#3b82f6]', locked: false },
-                ].map(({ val, label, color, locked }) => (
+                  { val: 'hadir', label: 'Hadir',
+                    activeClass: 'border-emerald-500 bg-emerald-500/10 text-emerald-400',
+                    Icon: CheckCircle2, locked: !canAbsenHadir },
+                  { val: 'sakit', label: 'Sakit',
+                    activeClass: 'border-amber-500 bg-amber-500/10 text-amber-400',
+                    Icon: AlertTriangle, locked: false },
+                  { val: 'izin', label: 'Izin',
+                    activeClass: 'border-blue-500 bg-blue-500/10 text-blue-400',
+                    Icon: ClipboardList, locked: false },
+                ].map(({ val, label, activeClass, Icon, locked }) => (
                   <label
                     key={val}
                     title={locked ? 'Tidak tersedia — kamu di luar area sekolah' : ''}
-                    className={`relative flex items-center justify-center p-3 border rounded-xl cursor-pointer transition select-none
-                      ${status === val ? color : 'border-white/10 hover:border-white/30'}
+                    className={`relative flex flex-col items-center justify-center gap-1.5 p-3 border rounded-xl cursor-pointer transition select-none
+                      ${status === val ? activeClass : 'border-white/10 hover:border-white/25 text-slate-400'}
                       ${locked ? 'opacity-40 cursor-not-allowed' : ''}
                     `}
                   >
-                    <input
-                      type="radio"
-                      name="status"
-                      value={val}
-                      checked={status === val}
-                      onChange={handleStatusChange}
-                      disabled={locked}
-                      className="hidden"
-                    />
-                    <span className="font-medium">{label}</span>
+                    <input type="radio" name="status" value={val} checked={status === val}
+                      onChange={handleStatusChange} disabled={locked} className="hidden" />
+                    <Icon size={20} strokeWidth={1.8} />
+                    <span className="font-semibold text-sm">{label}</span>
                     {locked && (
-                      <span className="absolute top-1 right-1.5 text-xs">🔒</span>
+                      <div className="absolute top-1 right-1.5"><Lock size={10} className="text-current opacity-60" /></div>
                     )}
                   </label>
                 ))}
               </div>
-              {/* Pesan peringatan di luar area */}
               {locStatus === LOC_STATUS.OUT_AREA && (
                 <p className="mt-2 text-xs text-red-400 flex items-center gap-1.5">
-                  <span>⚠️</span> Hadir dikunci karena kamu di luar area {SCHOOL_NAME}.
+                  <AlertTriangle size={11} /> Hadir dikunci — kamu di luar area {SCHOOL_NAME}.
                 </p>
               )}
               {locStatus === LOC_STATUS.ERROR && (
                 <p className="mt-2 text-xs text-orange-400 flex items-center gap-1.5">
-                  <span>⚠️</span> Hadir dikunci karena GPS tidak dapat diakses.
+                  <AlertTriangle size={11} /> Hadir dikunci — GPS tidak dapat diakses.
                 </p>
               )}
             </div>
 
             {/* === FOTO (hanya untuk hadir) === */}
             {status === "hadir" && (
-              <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-5 rounded-xl border border-indigo-500/30">
-                <label className="block text-sm font-semibold text-indigo-300 mb-2">📸 Foto Langsung (Wajib)</label>
+              <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-4 rounded-xl border border-indigo-500/30">
+                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-300 mb-3">
+                  <Camera size={15} /> Foto Selfie (Wajib)
+                </div>
 
-                {cameraError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">{cameraError}</div>}
+                {cameraError && (
+                  <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs flex items-center gap-2">
+                    <XCircle size={14} /> {cameraError}
+                  </div>
+                )}
 
                 {!foto && isCameraActive && (
-                  <div className="relative w-full overflow-hidden rounded-xl border border-indigo-500/30 bg-black aspect-3/4 flex items-center justify-center">
+                  <div className="relative w-full overflow-hidden rounded-xl border border-indigo-500/30 bg-black aspect-3/4">
                     <video ref={videoRef} className="w-full h-full object-cover -scale-x-100" playsInline autoPlay muted />
                     <div className="absolute inset-x-0 bottom-4 flex justify-center">
-                      <button type="button" onClick={capturePhoto} className="w-16 h-16 bg-white/30 hover:bg-white border-4 border-white/50 hover:border-white rounded-full transition shadow-lg backdrop-blur-md flex items-center justify-center">📸</button>
+                      <button type="button" onClick={capturePhoto}
+                        className="w-16 h-16 bg-white/20 hover:bg-white/40 border-4 border-white/60 rounded-full transition shadow-lg backdrop-blur-md flex items-center justify-center">
+                        <Camera size={24} className="text-white" />
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {!foto && !isCameraActive && (
-                  <div onClick={startCamera} className="w-full py-12 border-2 border-dashed border-indigo-500/50 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/10 transition cursor-pointer">
-                    <span className="text-3xl mb-2">📸</span>
-                    <span className="font-semibold">Ketuk untuk Membuka Kamera</span>
+                  <div onClick={startCamera}
+                    className="w-full py-10 border-2 border-dashed border-indigo-500/50 rounded-xl flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-500/10 transition cursor-pointer gap-2">
+                    <Camera size={32} strokeWidth={1.5} />
+                    <span className="font-semibold text-sm">Ketuk untuk Membuka Kamera</span>
                   </div>
                 )}
 
@@ -492,7 +530,10 @@ export default function Absensi() {
                   <div className="relative w-full overflow-hidden rounded-xl border border-indigo-500/30">
                     <img src={foto} alt="Bukti" className="w-full object-cover max-h-64" />
                     <div className="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/80 to-transparent flex justify-end">
-                      <button type="button" onClick={startCamera} className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-bold rounded-lg shadow-lg">🔄 Ulangi Foto</button>
+                      <button type="button" onClick={startCamera}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold rounded-lg shadow-lg">
+                        <RotateCcw size={13} /> Ulangi Foto
+                      </button>
                     </div>
                   </div>
                 )}
@@ -516,17 +557,19 @@ export default function Absensi() {
             <button
               type="submit"
               disabled={isSubmitting || locStatus === LOC_STATUS.LOADING}
-              className={`w-full py-3.5 rounded-xl font-bold transition flex items-center justify-center shadow-lg ${
+              className={`w-full py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg ${
                 isSubmitting || locStatus === LOC_STATUS.LOADING
-                  ? "bg-indigo-500/50 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-500"
+                  ? 'bg-indigo-500/40 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-500/30'
               }`}
             >
-              {isSubmitting
-                ? "⏳ Mengirim..."
-                : locStatus === LOC_STATUS.LOADING
-                ? "⏳ Mendeteksi Lokasi..."
-                : "📤 Kirim Kehadiran"}
+              {isSubmitting ? (
+                <><Loader2 size={18} className="animate-spin" /> Mengirim...</>
+              ) : locStatus === LOC_STATUS.LOADING ? (
+                <><Loader2 size={18} className="animate-spin" /> Mendeteksi Lokasi...</>
+              ) : (
+                <><Send size={18} /> Kirim Kehadiran</>
+              )}
             </button>
           </form>
         </div>

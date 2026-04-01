@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
 import * as XLSX from 'xlsx';
+import { Printer, FileSpreadsheet, RefreshCw, CalendarDays, Trash2, Search, ClipboardList } from 'lucide-react';
 
 export default function Rekap() {
   const { records, deleteRecord, getClasses } = useAppStore();
@@ -92,11 +93,11 @@ export default function Rekap() {
           <p className="text-slate-400">Lihat dan filter seluruh data kehadiran siswa</p>
         </div>
         <div className="flex gap-2 print:hidden">
-          <button onClick={handleCetak} className="px-4 py-2 bg-[#ffffff0d] hover:bg-[#ffffff1a] border border-white/10 rounded-lg transition font-medium text-sm flex items-center gap-2">
-            <span>🖨️</span> Cetak Laporan
+          <button onClick={handleCetak} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition font-medium text-sm">
+            <Printer size={15} /> Cetak Laporan
           </button>
-          <button onClick={handleExportExcel} className="px-4 py-2 bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-lg transition font-medium text-sm flex items-center gap-2">
-            <span>📊</span> Export Excel
+          <button onClick={handleExportExcel} className="flex items-center gap-2 px-4 py-2 bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-lg transition font-medium text-sm">
+            <FileSpreadsheet size={15} /> Export Excel
           </button>
         </div>
       </div>
@@ -132,8 +133,12 @@ export default function Rekap() {
           </div>
         </div>
         <div className="flex gap-2 mt-4">
-          <button onClick={handleReset} className="px-3 py-1.5 bg-[#ffffff0d] hover:bg-[#ffffff10] text-sm font-medium rounded-lg text-slate-300">🔄 Reset Filter</button>
-          <button onClick={() => { const d = new Date().toLocaleDateString('en-CA'); setFilterFrom(d); setFilterTo(d); }} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-sm font-medium rounded-lg text-white">📅 Hari Ini</button>
+          <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-sm font-medium rounded-lg text-slate-300">
+            <RefreshCw size={13} /> Reset Filter
+          </button>
+          <button onClick={() => { const d = new Date().toLocaleDateString('en-CA'); setFilterFrom(d); setFilterTo(d); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-sm font-medium rounded-lg text-white">
+            <CalendarDays size={13} /> Hari Ini
+          </button>
         </div>
       </div>
 
@@ -154,14 +159,18 @@ export default function Rekap() {
       {/* TABLE */}
       <div className="glass-card overflow-hidden">
         <div className="p-4 border-b border-white/10 bg-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="font-semibold text-white">Data Absensi ({filteredRecords.length} Catatan)</h2>
-          <div className="print:hidden w-full sm:w-64">
+          <h2 className="font-semibold text-white flex items-center gap-2">
+            <ClipboardList size={16} className="text-indigo-400" />
+            Data Absensi ({filteredRecords.length} Catatan)
+          </h2>
+          <div className="print:hidden w-full sm:w-64 relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input 
               type="text" 
               placeholder="Cari nama atau NISN..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#080818] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" 
+              className="w-full bg-[#080818] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" 
             />
           </div>
         </div>
@@ -216,7 +225,9 @@ export default function Rekap() {
                   </td>
                   <td className="px-4 py-3 text-slate-400 max-w-[120px] truncate" title={r.keterangan}>{r.keterangan || '-'}</td>
                   <td className="px-4 py-3 print:hidden">
-                    <button onClick={() => handleDelete(r.id)} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-500 rounded transition">🗑️</button>
+                    <button onClick={() => handleDelete(r.id)} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition">
+                      <Trash2 size={14} />
+                    </button>
                   </td>
                 </tr>
               ))}

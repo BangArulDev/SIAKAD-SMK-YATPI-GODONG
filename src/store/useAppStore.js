@@ -115,16 +115,40 @@ const useAppStore = create(
       },
 
       updateTeacher: async (id, updates) => {
-        const { data, error } = await supabase.from('profiles').update(updates).eq('id', id).select().single();
-        if (error) throw error;
+        // Hapus kolom yang tidak perlu diupdate jika ada
+        const { password, ...restUpdates } = updates;
+        // Jika password diisi, sertakan; jika kosong, jangan ubah
+        const payload = password && password.trim() ? updates : restUpdates;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) {
+          if (error.code === 'PGRST116' || error.message?.includes('0 rows')) {
+            throw new Error('Gagal update: Data tidak ditemukan atau akses ditolak (cek RLS Policy Supabase)');
+          }
+          throw error;
+        }
+        if (!data) throw new Error('Gagal memperbarui data guru: tidak ada data yang dikembalikan');
         set(state => ({
           teachers: (state.teachers || []).map(t => t.id === id ? data : t)
         }));
       },
 
       deleteTeacher: async (id) => {
-        const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) throw error;
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          if (error.message?.includes('violates') || error.code === '23503') {
+            throw new Error('Gagal hapus: Data guru ini masih memiliki referensi pada data lain (absensi/tugas)');
+          }
+          throw new Error(`Gagal menghapus: ${error.message} (Pastikan RLS Policy Supabase sudah diatur)`);
+        }
         set(state => ({
           teachers: (state.teachers || []).filter(t => t.id !== id)
         }));

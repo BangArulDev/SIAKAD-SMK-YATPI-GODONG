@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
+import { GraduationCap, Users, Pencil, Trash2, Plus, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function Admin() {
   const { session, students, teachers, addStudent, updateStudent, deleteStudent, addTeacher, updateTeacher, deleteTeacher } = useAppStore();
@@ -102,13 +103,17 @@ export default function Admin() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5 w-fit">
           <button
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'siswa' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'siswa' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
             onClick={() => setActiveTab('siswa')}
-          >👨‍🎓 Data Siswa</button>
+          >
+            <Users size={15} /> Data Siswa
+          </button>
           <button
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'guru' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'guru' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
             onClick={() => setActiveTab('guru')}
-          >👨‍🏫 Data Guru / Admin</button>
+          >
+            <GraduationCap size={15} /> Data Guru / Admin
+          </button>
         </div>
       </div>
 
@@ -119,9 +124,9 @@ export default function Admin() {
             <button 
               onClick={() => { setEditingStudent(null); setShowStudentModal(true); }} 
               disabled={loading}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition flex items-center gap-2"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition"
             >
-              <span>+</span> Tambah Siswa
+              <Plus size={15} /> Tambah Siswa
             </button>
           </div>
           <div className="overflow-x-auto max-h-[60vh]">
@@ -141,8 +146,14 @@ export default function Admin() {
                     <td className="px-4 py-2 font-medium text-white">{s.nama}</td>
                     <td className="px-4 py-2 text-slate-300">{s.kelas}</td>
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => { setEditingStudent(s); setShowStudentModal(true); }} disabled={loading} className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 text-indigo-400 rounded transition mr-2">✏️</button>
-                      <button onClick={() => handleStudentDelete(s.nisn)} disabled={loading} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-500 rounded transition">🗑️</button>
+                      <button onClick={() => { setEditingStudent(s); setShowStudentModal(true); }} disabled={loading}
+                        className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 text-indigo-400 rounded-lg transition mr-2">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => handleStudentDelete(s.nisn)} disabled={loading}
+                        className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition">
+                        <Trash2 size={14} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -159,9 +170,9 @@ export default function Admin() {
             <button 
               onClick={() => { setEditingTeacher(null); setShowTeacherModal(true); }} 
               disabled={loading}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition flex items-center gap-2"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition"
             >
-              <span>+</span> Tambah Guru/Admin
+              <Plus size={15} /> Tambah Guru/Admin
             </button>
           </div>
           <div className="overflow-x-auto max-h-[60vh]">
@@ -185,8 +196,15 @@ export default function Admin() {
                     </td>
                     <td className="px-4 py-2 text-slate-500 text-xs">••••••••</td>
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => { setEditingTeacher(t); setShowTeacherModal(true); }} disabled={loading} className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 text-indigo-400 rounded transition mr-2">✏️</button>
-                      <button onClick={() => handleTeacherDelete(t.id)} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-500 rounded transition" disabled={t.id === 'admin' || loading}>🗑️</button>
+                      <button onClick={() => { setEditingTeacher(t); setShowTeacherModal(true); }} disabled={loading}
+                        className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 text-indigo-400 rounded-lg transition mr-2">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => handleTeacherDelete(t.id)}
+                        className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition"
+                        disabled={t.id === 'admin' || loading}>
+                        <Trash2 size={14} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -199,8 +217,13 @@ export default function Admin() {
       {/* MODALS */}
       {showStudentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <form onSubmit={handleStudentSubmit} className="glass-card p-6 w-full max-w-md animate-fade-in border border-white/10 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4">{editingStudent ? '✏️ Edit Data Siswa' : '+ Tambah Siswa Baru'}</h2>
+            <form onSubmit={handleStudentSubmit} className="glass-card p-6 w-full max-w-md animate-slide-up border border-indigo-500/20 shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="icon-wrap icon-wrap-md icon-indigo">
+                  {editingStudent ? <Pencil size={18} /> : <Plus size={18} />}
+                </div>
+                <h2 className="text-xl font-bold">{editingStudent ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}</h2>
+              </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-300 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
@@ -215,21 +238,28 @@ export default function Admin() {
                 <input name="kelas" required type="text" defaultValue={editingStudent?.kelas} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none" placeholder="Misal: XII TKJ 1" />
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setShowStudentModal(false)} className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
-              <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
-                {loading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
-                {loading ? "Memproses..." : "Simpan"}
-              </button>
-            </div>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setShowStudentModal(false)}
+                  className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
+                <button type="submit" disabled={loading}
+                  className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
+                  {loading ? <Loader2 size={15} className="animate-spin" /> : null}
+                  {loading ? 'Memproses...' : 'Simpan'}
+                </button>
+              </div>
           </form>
         </div>
       )}
 
       {showTeacherModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <form onSubmit={handleTeacherSubmit} className="glass-card p-6 w-full max-w-md animate-fade-in border border-white/10 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4">{editingTeacher ? '✏️ Edit Akun Pegawai' : '+ Tambah Akun Baru'}</h2>
+            <form onSubmit={handleTeacherSubmit} className="glass-card p-6 w-full max-w-md animate-slide-up border border-indigo-500/20 shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="icon-wrap icon-wrap-md icon-purple">
+                  {editingTeacher ? <Pencil size={18} /> : <ShieldCheck size={18} />}
+                </div>
+                <h2 className="text-xl font-bold">{editingTeacher ? 'Edit Akun Pegawai' : 'Tambah Akun Baru'}</h2>
+              </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Username Login</label>
@@ -251,13 +281,15 @@ export default function Admin() {
                 </select>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setShowTeacherModal(false)} className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
-              <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
-                {loading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
-                {loading ? "Memproses..." : "Simpan"}
-              </button>
-            </div>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setShowTeacherModal(false)}
+                  className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
+                <button type="submit" disabled={loading}
+                  className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-2">
+                  {loading ? <Loader2 size={15} className="animate-spin" /> : null}
+                  {loading ? 'Memproses...' : 'Simpan'}
+                </button>
+              </div>
           </form>
         </div>
       )}
