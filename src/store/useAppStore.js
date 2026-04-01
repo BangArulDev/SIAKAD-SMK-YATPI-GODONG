@@ -73,14 +73,22 @@ const useAppStore = create(
       // --- AUTHENTICATION ---
       loginGuru: async (username, password) => {
         // Login langsung via tabel profiles (tidak pakai Supabase Auth)
-        const { data: profile, error } = await supabase
+        const { data: profiles, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('username', username.trim())
-          .eq('password', password)
-          .single();
+          .ilike('username', username.trim());
 
-        if (error || !profile) throw new Error('Username atau password salah');
+        if (error) throw new Error('Terjadi kesalahan koneksi saat memeriksa data');
+        
+        if (!profiles || profiles.length === 0) {
+          throw new Error('Username tidak ditemukan');
+        }
+
+        const profile = profiles.find(p => p.password === password);
+        
+        if (!profile) {
+          throw new Error('Password yang dimasukkan salah');
+        }
 
         set({ session: profile });
         return profile;
@@ -90,7 +98,7 @@ const useAppStore = create(
         const { data: student, error } = await supabase
           .from('students')
           .select('*')
-          .eq('nisn', nisn)
+          .eq('nisn', nisn.trim())
           .single();
 
         if (error || !student) throw new Error('NISN tidak terdaftar');
