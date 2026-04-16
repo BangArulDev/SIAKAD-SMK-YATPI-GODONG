@@ -320,7 +320,7 @@ export default function TugasSiswa() {
       {/* DETAIL & FORM MODAL */}
       {selectedTugas && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={resetForm}>
-          <div className="glass-card w-full max-w-lg max-h-[92vh] overflow-y-auto animate-fade-in border border-indigo-500/30" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0d0d1f] rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-fade-in border border-indigo-500/30 shadow-2xl shadow-black/50" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="p-6 border-b border-white/10">
               <div className="flex items-start justify-between gap-3">

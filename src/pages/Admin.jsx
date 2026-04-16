@@ -216,8 +216,8 @@ export default function Admin() {
 
       {/* MODALS */}
       {showStudentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <form onSubmit={handleStudentSubmit} className="glass-card p-6 w-full max-w-md animate-slide-up border border-indigo-500/20 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <form onSubmit={handleStudentSubmit} className="bg-[#0d0d1f] rounded-2xl p-6 w-full max-w-md animate-slide-up border border-indigo-500/30 shadow-2xl shadow-black/50">
               <div className="flex items-center gap-3 mb-5">
                 <div className="icon-wrap icon-wrap-md icon-indigo">
                   {editingStudent ? <Pencil size={18} /> : <Plus size={18} />}
@@ -252,8 +252,8 @@ export default function Admin() {
       )}
 
       {showTeacherModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <form onSubmit={handleTeacherSubmit} className="glass-card p-6 w-full max-w-md animate-slide-up border border-indigo-500/20 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <form onSubmit={handleTeacherSubmit} className="bg-[#0d0d1f] rounded-2xl p-6 w-full max-w-md animate-slide-up border border-indigo-500/30 shadow-2xl shadow-black/50">
               <div className="flex items-center gap-3 mb-5">
                 <div className="icon-wrap icon-wrap-md icon-purple">
                   {editingTeacher ? <Pencil size={18} /> : <ShieldCheck size={18} />}

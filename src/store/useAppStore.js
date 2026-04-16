@@ -308,8 +308,14 @@ const useAppStore = create(
         const session = get().session;
         if (!session || (session.role !== 'guru' && session.role !== 'admin')) throw new Error('Hanya guru/admin');
         
+        // Konversi deadline dari local datetime ke UTC ISO string
+        // Input dari datetime-local: "2026-04-16T16:00" (tanpa timezone → dianggap lokal WIB)
+        // new Date() akan membacanya sebagai lokal, kemudian .toISOString() mengubah ke UTC yang benar
+        const deadlineISO = data.deadline ? new Date(data.deadline).toISOString() : null;
+
         const payload = {
           ...data,
+          deadline: deadlineISO,
           guru_id: session.id,
           guru_nama: session.nama,
           is_active: true
