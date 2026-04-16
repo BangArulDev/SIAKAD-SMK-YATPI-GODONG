@@ -28,8 +28,13 @@ const LOC_STATUS = {
 
 export default function Absensi() {
   const navigate = useNavigate();
-  const { session, mandiriSession, isMandiriOpen, getAutoAttendanceStatus, addRecord, logout, settings } = useAppStore();
+  const { session, mandiriSessions, getActiveSessionForKelas, getAutoAttendanceStatus, addRecord, logout, settings } = useAppStore();
   const { addToast } = useToast();
+
+  // Cari sesi aktif untuk kelas siswa ini (null jika tidak ada)
+  const activeSession = getActiveSessionForKelas(session?.kelas);
+  const mandiriActive = !!activeSession;
+  const isDaring = activeSession?.is_daring === true;
 
   const [status, setStatus] = useState("hadir");
   const [foto, setFoto] = useState(null);
@@ -39,18 +44,15 @@ export default function Absensi() {
 
   // === GPS STATE ===
   const [locStatus, setLocStatus] = useState(LOC_STATUS.IDLE);
-  const [locData, setLocData] = useState(null);      // { latitude, longitude, accuracy }
+  const [locData, setLocData] = useState(null);
   const [locError, setLocError] = useState("");
-  const [locDistance, setLocDistance] = useState(null); // Jarak dari sekolah dalam meter
+  const [locDistance, setLocDistance] = useState(null);
 
   // === KAMERA STATE ===
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-
-  const mandiriActive = isMandiriOpen();
-  const isDaring = mandiriSession?.is_daring === true;
 
   // Siswa diizinkan hadir jika: mode daring ATAU dalam area sekolah
   const canAbsenHadir = isDaring || locStatus === LOC_STATUS.IN_AREA;
@@ -183,9 +185,9 @@ export default function Absensi() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Tentukan status final berdasarkan waktu absen (otomatis)
-    // Jika siswa memilih 'hadir', status bisa berubah menjadi 'terlambat' sesuai jam
-    const finalStatus = status === 'hadir' ? getAutoAttendanceStatus() : status;
+    // Tentukan status final berdasarkan waktu absen (otomatis) + sesi aktif
+    const sesiAktif = activeSession?.sesi || 'pagi';
+    const finalStatus = status === 'hadir' ? getAutoAttendanceStatus(sesiAktif) : status;
 
     // Validasi ulang lokasi sebelum submit
     if (finalStatus === 'hadir' && !canAbsenHadir) {
@@ -239,17 +241,17 @@ export default function Absensi() {
         finalFotoUrl = publicUrl;
       }
 
-      // 4. Save Record to DB (gunakan finalStatus yang sudah ditentukan otomatis)
+      // 4. Save Record to DB
       await addRecord({
         nisn: session.nisn,
         nama: session.nama,
         kelas: session.kelas,
-        status: finalStatus,   // ← otomatis: 'hadir' atau 'terlambat' berdasarkan jam
+        status: finalStatus,
+        sesi: activeSession?.sesi || 'pagi',   // 'pagi' | 'siang'
         keterangan,
         foto_url: finalFotoUrl,
         metode: isDaring ? 'siswa-daring' : 'siswa-form',
-        materi: mandiriSession?.materi || '-',
-        // Data GPS untuk audit trail
+        materi: activeSession?.materi || '-',
         latitude: locData?.latitude || null,
         longitude: locData?.longitude || null,
         is_in_area: locStatus === LOC_STATUS.IN_AREA ? true : (locStatus === LOC_STATUS.SKIPPED ? null : false),
@@ -416,8 +418,13 @@ export default function Absensi() {
       ) : (
         <div className="w-full max-w-lg glass-card animate-fade-in">
           <div className="p-5 border-b border-white/10 bg-indigo-500/5">
-            <h1 className="text-lg font-bold mb-0.5">Materi: {mandiriSession?.materi}</h1>
-            <p className="text-xs text-slate-400">{mandiriSession?.deskripsi || 'Sesi mandiri aktif'}</p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className={`px-2 py-0.5 rounded text-xs font-bold ${activeSession?.sesi === 'siang' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                {activeSession?.sesi === 'siang' ? '🌙 SESI SIANG' : '☀️ SESI PAGI'}
+              </span>
+            </div>
+            <h1 className="text-lg font-bold mb-0.5">Materi: {activeSession?.materi}</h1>
+            <p className="text-xs text-slate-400">{activeSession?.deskripsi || 'Sesi mandiri aktif'}</p>
             {isDaring && (
               <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
                 <Wifi size={11} /> MODE DARING

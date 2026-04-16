@@ -5,23 +5,33 @@ import { supabase } from '../lib/supabase';
 // Helper to get today's date formatted for the DB
 const getTodayDB = () => new Date().toLocaleDateString('en-CA');
 
+// Helper: convert "HH:MM" or "HH:MM:SS" to total minutes
+const toMinutes = (hhmm) => {
+  if (!hhmm) return 0;
+  const [h, m] = hhmm.slice(0, 5).split(':').map(Number);
+  return h * 60 + m;
+};
+
 const useAppStore = create(
   persist(
     (set, get) => ({
       // --- STATE ---
-      session: null,       // Who is logged in (persisted locally)
-      students: [],        // Cached from Supabase
-      teachers: [],        // Cached from Supabase profiles
-      records: [],         // Cached from Supabase
-      mandiriSession: null, // Current active session
-      tugas: [],           // Assignments
-      pengumpulan: [],     // Submissions
+      session: null,         // Who is logged in (persisted locally)
+      students: [],          // Cached from Supabase
+      teachers: [],          // Cached from Supabase profiles
+      records: [],           // Cached from Supabase
+      mandiriSessions: [],   // ALL active sessions today (pagi & siang, multiple kelas)
+      tugas: [],             // Assignments
+      pengumpulan: [],       // Submissions
       isInitialized: false,
       // Pengaturan jam absensi — nilai default sebagai fallback jika DB belum ada
       settings: {
-        jam_buka:        '07:00',
-        jam_batas_hadir: '07:15',
-        jam_tutup:       '07:30',
+        jam_buka:              '07:00',
+        jam_batas_hadir:       '07:15',
+        jam_tutup:             '07:30',
+        jam_buka_siang:        '12:30',
+        jam_batas_hadir_siang: '12:45',
+        jam_tutup_siang:       '13:00',
       },
 
       // --- INITIALIZATION ---
@@ -55,7 +65,8 @@ const useAppStore = create(
             supabase.from('absensi_records').select('*'),
             supabase.from('tugas').select('*'),
             supabase.from('pengumpulan').select('*'),
-            supabase.from('absensi_sessions').select('*').eq('is_open', true).eq('tanggal', getTodayDB()).order('opened_at', { ascending: false }).limit(1),
+            // Load ALL open sessions for today (pagi & siang)
+            supabase.from('absensi_sessions').select('*').eq('is_open', true).eq('tanggal', getTodayDB()).order('opened_at', { ascending: false }),
             supabase.from('profiles').select('*'),
             supabase.from('settings').select('*').eq('id', 'default').single()
           ]);
@@ -69,19 +80,19 @@ const useAppStore = create(
             tugas: tugas || [], 
             pengumpulan: pengumpulan || [],
             teachers: profiles || [],
-            mandiriSession: sessions?.[0] || null,
+            mandiriSessions: sessions || [],
             isInitialized: true,
             ...(settingsRow ? {
               settings: {
-                jam_buka:        parseTime(settingsRow.jam_buka)        || '07:00',
-                jam_batas_hadir: parseTime(settingsRow.jam_batas_hadir) || '07:15',
-                jam_tutup:       parseTime(settingsRow.jam_tutup)       || '07:30',
+                jam_buka:              parseTime(settingsRow.jam_buka)             || '07:00',
+                jam_batas_hadir:       parseTime(settingsRow.jam_batas_hadir)      || '07:15',
+                jam_tutup:             parseTime(settingsRow.jam_tutup)            || '07:30',
+                jam_buka_siang:        parseTime(settingsRow.jam_buka_siang)       || '12:30',
+                jam_batas_hadir_siang: parseTime(settingsRow.jam_batas_hadir_siang)|| '12:45',
+                jam_tutup_siang:       parseTime(settingsRow.jam_tutup_siang)      || '13:00',
               }
             } : {})
           });
-
-          // 3. Option to perform migration if needed
-          // await get().migrateFromLocalStorage();
 
         } catch (err) {
           console.error("Initialization Failed:", err);
@@ -180,8 +191,17 @@ const useAppStore = create(
         }));
       },
 
-      // --- MANDIRI SESSION ---
-      openMandiri: async (materi, deskripsi, kelas, isDaring = false) => {
+      // --- MANDIRI SESSIONS (MULTI-SESI: PAGI & SIANG) ---
+
+      /**
+       * Buka sesi absensi baru.
+       * @param {string} materi
+       * @param {string} deskripsi
+       * @param {string} kelas  - kelas yang dituju, atau 'Semua'
+       * @param {boolean} isDaring  - mode online / bypass GPS
+       * @param {string} sesi   - 'pagi' | 'siang'
+       */
+      openMandiri: async (materi, deskripsi, kelas, isDaring = false, sesi = 'pagi') => {
         const session = get().session;
         if (!session || (session.role !== 'guru' && session.role !== 'admin')) throw new Error('Hanya guru/admin');
         
@@ -189,11 +209,12 @@ const useAppStore = create(
           materi,
           deskripsi,
           kelas,
+          sesi,                              // 'pagi' | 'siang'
           guru_id: session.id,
           guru_nama: session.nama,
           tanggal: getTodayDB(),
           is_open: true,
-          is_daring: isDaring,   // TRUE = pembelajaran online, bypass validasi GPS
+          is_daring: isDaring,
           opened_at: new Date().toISOString()
         };
 
@@ -204,55 +225,69 @@ const useAppStore = create(
           .single();
 
         if (error) throw error;
-        set({ mandiriSession: data });
+        // Tambahkan ke array (tidak replace)
+        set(state => ({ mandiriSessions: [...(state.mandiriSessions || []), data] }));
         return data;
       },
 
-      closeMandiri: async () => {
-        const m = get().mandiriSession;
-        if (!m) return;
-
+      /**
+       * Tutup sesi berdasarkan ID spesifik.
+       * @param {string} sessionId
+       */
+      closeMandiri: async (sessionId) => {
         const { error } = await supabase
           .from('absensi_sessions')
           .update({ is_open: false, closed_at: new Date().toISOString() })
-          .eq('id', m.id);
+          .eq('id', sessionId);
 
         if (error) throw error;
-        set({ mandiriSession: null });
+        // Hapus dari array state
+        set(state => ({
+          mandiriSessions: (state.mandiriSessions || []).filter(s => s.id !== sessionId)
+        }));
       },
 
-      isMandiriOpen: () => {
-        const s = get().mandiriSession;
-        if (!s || !s.is_open) return false;
-        const opened = new Date(s.opened_at).getTime();
-        if (Date.now() - opened > 8 * 60 * 60 * 1000) return false;
-        if (s.tanggal !== getTodayDB()) return false;
-
-        // Gunakan jam dari settings (dinamis, bisa diubah admin)
-        const { jam_buka, jam_tutup } = get().settings;
-        const toMinutes = (hhmm) => {
-          const [h, m] = hhmm.split(':').map(Number);
-          return h * 60 + m;
-        };
+      /**
+       * Cari sesi yang aktif untuk kelas tertentu pada waktu sekarang.
+       * Digunakan di halaman siswa (Absensi.jsx).
+       * Mengembalikan objek sesi atau null.
+       */
+      getActiveSessionForKelas: (kelas) => {
+        const sessions = get().mandiriSessions || [];
+        const settings = get().settings;
         const now = new Date();
-        const totalMinutes = now.getHours() * 60 + now.getMinutes();
-        if (totalMinutes < toMinutes(jam_buka) || totalMinutes >= toMinutes(jam_tutup)) return false;
+        const nowMin = now.getHours() * 60 + now.getMinutes();
 
-        return true;
+        for (const s of sessions) {
+          if (!s.is_open) continue;
+          if (s.tanggal !== getTodayDB()) continue;
+          // Cocokkan kelas (atau sesi untuk Semua kelas)
+          if (s.kelas !== 'Semua' && s.kelas !== kelas) continue;
+
+          // Tentukan jendela waktu berdasarkan sesi pagi/siang
+          const isSiang = s.sesi === 'siang';
+          const jamBuka  = isSiang ? settings.jam_buka_siang  : settings.jam_buka;
+          const jamTutup = isSiang ? settings.jam_tutup_siang : settings.jam_tutup;
+
+          if (nowMin >= toMinutes(jamBuka) && nowMin < toMinutes(jamTutup)) {
+            return s;  // Sesi ini aktif dan dalam jendela waktu yang benar
+          }
+        }
+        return null;
       },
 
-      // Menentukan status kehadiran otomatis berdasarkan jam absen
-      // Sebelum batas_hadir → 'hadir', setelahnya → 'terlambat'
-      getAutoAttendanceStatus: () => {
-        const { jam_batas_hadir } = get().settings;
-        const toMinutes = (hhmm) => {
-          const [h, m] = hhmm.split(':').map(Number);
-          return h * 60 + m;
-        };
+      /**
+       * Menentukan status kehadiran otomatis (hadir/terlambat)
+       * berdasarkan jam saat ini dan pengaturan sesi (pagi/siang).
+       */
+      getAutoAttendanceStatus: (sesi = 'pagi') => {
+        const settings = get().settings;
+        const batas = sesi === 'siang'
+          ? settings.jam_batas_hadir_siang
+          : settings.jam_batas_hadir;
         const now = new Date();
-        const totalMinutes = now.getHours() * 60 + now.getMinutes();
-        // Tepat di batas → masih hadir; satu menit setelah batas → terlambat
-        return totalMinutes > toMinutes(jam_batas_hadir) ? 'terlambat' : 'hadir';
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        return nowMin > toMinutes(batas) ? 'terlambat' : 'hadir';
       },
 
       // --- SETTINGS ---
@@ -260,10 +295,13 @@ const useAppStore = create(
         const { data, error } = await supabase
           .from('settings')
           .update({
-            jam_buka:        newSettings.jam_buka,
-            jam_batas_hadir: newSettings.jam_batas_hadir,
-            jam_tutup:       newSettings.jam_tutup,
-            updated_at:      new Date().toISOString(),
+            jam_buka:              newSettings.jam_buka,
+            jam_batas_hadir:       newSettings.jam_batas_hadir,
+            jam_tutup:             newSettings.jam_tutup,
+            jam_buka_siang:        newSettings.jam_buka_siang,
+            jam_batas_hadir_siang: newSettings.jam_batas_hadir_siang,
+            jam_tutup_siang:       newSettings.jam_tutup_siang,
+            updated_at:            new Date().toISOString(),
           })
           .eq('id', 'default')
           .select()
@@ -274,9 +312,12 @@ const useAppStore = create(
         const parseTime = (t) => t ? t.slice(0, 5) : t;
         set({
           settings: {
-            jam_buka:        parseTime(data.jam_buka)        || newSettings.jam_buka,
-            jam_batas_hadir: parseTime(data.jam_batas_hadir) || newSettings.jam_batas_hadir,
-            jam_tutup:       parseTime(data.jam_tutup)       || newSettings.jam_tutup,
+            jam_buka:              parseTime(data.jam_buka)             || newSettings.jam_buka,
+            jam_batas_hadir:       parseTime(data.jam_batas_hadir)      || newSettings.jam_batas_hadir,
+            jam_tutup:             parseTime(data.jam_tutup)            || newSettings.jam_tutup,
+            jam_buka_siang:        parseTime(data.jam_buka_siang)       || newSettings.jam_buka_siang,
+            jam_batas_hadir_siang: parseTime(data.jam_batas_hadir_siang)|| newSettings.jam_batas_hadir_siang,
+            jam_tutup_siang:       parseTime(data.jam_tutup_siang)      || newSettings.jam_tutup_siang,
           }
         });
       },
@@ -284,17 +325,22 @@ const useAppStore = create(
       // --- RECORDS ---
       addRecord: async (rec) => {
         const today = getTodayDB();
+        const sesi = rec.sesi || 'pagi';
         
-        // Prevent duplicate today in cache first
+        // Prevent duplicate: satu siswa hanya bisa absen sekali per sesi per hari
         const records = get().records || [];
-        const exists = records.find(r => r.nisn === rec.nisn && r.tanggal === today);
-        if (exists) throw new Error('Siswa ini sudah diabsen hari ini');
+        const exists = records.find(r => r.nisn === rec.nisn && r.tanggal === today && r.sesi === sesi);
+        if (exists) throw new Error(`Siswa ini sudah diabsen untuk sesi ${sesi === 'siang' ? 'Siang' : 'Pagi'} hari ini`);
+
+        // Ambil materi dari sesi yang aktif untuk kelas siswa
+        const activeSession = get().getActiveSessionForKelas(rec.kelas);
 
         const newRec = {
           ...rec,
+          sesi,
           tanggal: today,
           waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          materi: get().mandiriSession?.materi || rec.materi
+          materi: activeSession?.materi || rec.materi || '-'
         };
 
         const { data, error } = await supabase
@@ -304,7 +350,7 @@ const useAppStore = create(
           .single();
 
         if (error) {
-          if (error.code === '23505') throw new Error('Siswa ini sudah diabsen hari ini');
+          if (error.code === '23505') throw new Error(`Siswa ini sudah diabsen untuk sesi ${sesi === 'siang' ? 'Siang' : 'Pagi'} hari ini`);
           throw error;
         }
 
@@ -361,8 +407,6 @@ const useAppStore = create(
         if (!session || (session.role !== 'guru' && session.role !== 'admin')) throw new Error('Hanya guru/admin');
         
         // Konversi deadline dari local datetime ke UTC ISO string
-        // Input dari datetime-local: "2026-04-16T16:00" (tanpa timezone → dianggap lokal WIB)
-        // new Date() akan membacanya sebagai lokal, kemudian .toISOString() mengubah ke UTC yang benar
         const deadlineISO = data.deadline ? new Date(data.deadline).toISOString() : null;
 
         const payload = {

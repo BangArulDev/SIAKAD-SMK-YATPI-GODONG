@@ -18,9 +18,12 @@ export default function Admin() {
 
   // Settings form state — inisialisasi dari store
   const [settingsForm, setSettingsForm] = useState({
-    jam_buka:        settings?.jam_buka        || '07:00',
-    jam_batas_hadir: settings?.jam_batas_hadir || '07:15',
-    jam_tutup:       settings?.jam_tutup       || '07:30',
+    jam_buka:              settings?.jam_buka              || '07:00',
+    jam_batas_hadir:       settings?.jam_batas_hadir       || '07:15',
+    jam_tutup:             settings?.jam_tutup             || '07:30',
+    jam_buka_siang:        settings?.jam_buka_siang        || '12:30',
+    jam_batas_hadir_siang: settings?.jam_batas_hadir_siang || '12:45',
+    jam_tutup_siang:       settings?.jam_tutup_siang       || '13:00',
   });
 
   // === HANDLERS SISWA ===
@@ -100,16 +103,15 @@ export default function Admin() {
   // === HANDLER PENGATURAN ===
   const handleSettingsSubmit = async (e) => {
     e.preventDefault();
-    const { jam_buka, jam_batas_hadir, jam_tutup } = settingsForm;
+    const { jam_buka, jam_batas_hadir, jam_tutup, jam_buka_siang, jam_batas_hadir_siang, jam_tutup_siang } = settingsForm;
 
-    // Validasi urutan waktu
+    // Validasi urutan waktu — pagi
     const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
-    if (toMin(jam_buka) >= toMin(jam_batas_hadir)) {
-      return addToast('Jam buka harus sebelum batas terlambat', 'warning');
-    }
-    if (toMin(jam_batas_hadir) >= toMin(jam_tutup)) {
-      return addToast('Batas terlambat harus sebelum jam tutup', 'warning');
-    }
+    if (toMin(jam_buka) >= toMin(jam_batas_hadir)) return addToast('Jam buka pagi harus sebelum batas terlambat pagi', 'warning');
+    if (toMin(jam_batas_hadir) >= toMin(jam_tutup))  return addToast('Batas terlambat pagi harus sebelum jam tutup pagi', 'warning');
+    // Validasi urutan waktu — siang
+    if (toMin(jam_buka_siang) >= toMin(jam_batas_hadir_siang)) return addToast('Jam buka siang harus sebelum batas terlambat siang', 'warning');
+    if (toMin(jam_batas_hadir_siang) >= toMin(jam_tutup_siang))  return addToast('Batas terlambat siang harus sebelum jam tutup siang', 'warning');
 
     setLoading(true);
     try {
@@ -254,7 +256,7 @@ export default function Admin() {
 
       {/* TAB: PENGATURAN JAM ABSENSI */}
       {activeTab === 'pengaturan' && (
-        <div className="max-w-xl space-y-5">
+        <div className="max-w-2xl space-y-5">
 
           {/* Info card */}
           <div className="glass-card p-5 border border-indigo-500/20">
@@ -263,99 +265,95 @@ export default function Admin() {
               <h2 className="font-bold text-white">Pengaturan Jam Absensi</h2>
             </div>
             <p className="text-sm text-slate-400 ml-10">
-              Ubah jam buka dan tutup absensi sesuai jadwal sekolah. Perubahan langsung berlaku tanpa perlu ubah kode program.
+              Atur jam buka/tutup untuk Sesi Pagi dan Sesi Siang secara terpisah. Perubahan langsung berlaku.
             </p>
           </div>
 
-          {/* Visual timeline */}
-          <div className="glass-card p-5 border border-white/10">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Preview Jadwal Absensi</p>
-            <div className="relative h-10 rounded-xl overflow-hidden flex">
-              {/* Zona hadir */}
-              <div className="flex-1 bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">
-                ✅ Hadir
-              </div>
-              {/* Pemisah batas terlambat */}
-              <div className="w-0.5 bg-yellow-400/60" />
-              {/* Zona terlambat */}
-              <div className="flex-1 bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-xs font-bold text-yellow-400">
-                ⏰ Terlambat
-              </div>
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-slate-400">
-              <span className="font-mono text-emerald-400">{settingsForm.jam_buka}</span>
-              <span className="font-mono text-yellow-400">{settingsForm.jam_batas_hadir} (batas)</span>
-              <span className="font-mono text-red-400">{settingsForm.jam_tutup} (tutup)</span>
-            </div>
-          </div>
+          <form onSubmit={handleSettingsSubmit} className="space-y-4">
 
-          {/* Form */}
-          <form onSubmit={handleSettingsSubmit} className="glass-card p-6 border border-white/10 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Jam Buka */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400" /> Jam Buka
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={settingsForm.jam_buka}
-                  onChange={e => setSettingsForm(f => ({ ...f, jam_buka: e.target.value }))}
-                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-emerald-500 outline-none text-sm font-mono"
-                />
-                <p className="text-xs text-slate-500 mt-1">Absensi mulai bisa diisi</p>
+            {/* === SESI PAGI === */}
+            <div className="glass-card p-5 border border-amber-500/20">
+              <p className="text-sm font-bold text-amber-400 flex items-center gap-2 mb-4">☀️ Sesi Pagi</p>
+              {/* Timeline pagi */}
+              <div className="h-8 rounded-lg overflow-hidden flex mb-2">
+                <div className="flex-1 bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">✅ Hadir</div>
+                <div className="w-0.5 bg-yellow-400/60" />
+                <div className="flex-1 bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-xs font-bold text-yellow-400">⏰ Terlambat</div>
               </div>
-
-              {/* Batas Hadir */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <AlertTriangle size={13} className="text-yellow-400" /> Batas Hadir
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={settingsForm.jam_batas_hadir}
-                  onChange={e => setSettingsForm(f => ({ ...f, jam_batas_hadir: e.target.value }))}
-                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-yellow-500 outline-none text-sm font-mono"
-                />
-                <p className="text-xs text-slate-500 mt-1">Setelah ini → Terlambat</p>
+              <div className="flex justify-between text-xs mb-4">
+                <span className="font-mono text-emerald-400">{settingsForm.jam_buka}</span>
+                <span className="font-mono text-yellow-400">{settingsForm.jam_batas_hadir} (batas)</span>
+                <span className="font-mono text-red-400">{settingsForm.jam_tutup} (tutup)</span>
               </div>
-
-              {/* Jam Tutup */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Clock size={13} className="text-red-400" /> Jam Tutup
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={settingsForm.jam_tutup}
-                  onChange={e => setSettingsForm(f => ({ ...f, jam_tutup: e.target.value }))}
-                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-red-500 outline-none text-sm font-mono"
-                />
-                <p className="text-xs text-slate-500 mt-1">Absensi tidak bisa diisi</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><CheckCircle2 size={11} className="text-emerald-400" /> Jam Buka</label>
+                  <input type="time" required value={settingsForm.jam_buka} onChange={e => setSettingsForm(f => ({ ...f, jam_buka: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-emerald-500 outline-none text-sm font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><AlertTriangle size={11} className="text-yellow-400" /> Batas Hadir</label>
+                  <input type="time" required value={settingsForm.jam_batas_hadir} onChange={e => setSettingsForm(f => ({ ...f, jam_batas_hadir: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-yellow-500 outline-none text-sm font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><Clock size={11} className="text-red-400" /> Jam Tutup</label>
+                  <input type="time" required value={settingsForm.jam_tutup} onChange={e => setSettingsForm(f => ({ ...f, jam_tutup: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-red-500 outline-none text-sm font-mono" />
+                </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-white/5">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-500/20"
-              >
-                {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                {loading ? 'Menyimpan...' : 'Simpan Pengaturan'}
-              </button>
+            {/* === SESI SIANG === */}
+            <div className="glass-card p-5 border border-blue-500/20">
+              <p className="text-sm font-bold text-blue-400 flex items-center gap-2 mb-4">🌙 Sesi Siang</p>
+              {/* Timeline siang */}
+              <div className="h-8 rounded-lg overflow-hidden flex mb-2">
+                <div className="flex-1 bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">✅ Hadir</div>
+                <div className="w-0.5 bg-yellow-400/60" />
+                <div className="flex-1 bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-xs font-bold text-yellow-400">⏰ Terlambat</div>
+              </div>
+              <div className="flex justify-between text-xs mb-4">
+                <span className="font-mono text-emerald-400">{settingsForm.jam_buka_siang}</span>
+                <span className="font-mono text-yellow-400">{settingsForm.jam_batas_hadir_siang} (batas)</span>
+                <span className="font-mono text-red-400">{settingsForm.jam_tutup_siang} (tutup)</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><CheckCircle2 size={11} className="text-emerald-400" /> Jam Buka</label>
+                  <input type="time" required value={settingsForm.jam_buka_siang} onChange={e => setSettingsForm(f => ({ ...f, jam_buka_siang: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-emerald-500 outline-none text-sm font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><AlertTriangle size={11} className="text-yellow-400" /> Batas Hadir</label>
+                  <input type="time" required value={settingsForm.jam_batas_hadir_siang} onChange={e => setSettingsForm(f => ({ ...f, jam_batas_hadir_siang: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-yellow-500 outline-none text-sm font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1"><Clock size={11} className="text-red-400" /> Jam Tutup</label>
+                  <input type="time" required value={settingsForm.jam_tutup_siang} onChange={e => setSettingsForm(f => ({ ...f, jam_tutup_siang: e.target.value }))} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2 text-white focus:border-red-500 outline-none text-sm font-mono" />
+                </div>
+              </div>
             </div>
+
+            <button type="submit" disabled={loading} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-500/20">
+              {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              {loading ? 'Menyimpan...' : 'Simpan Semua Pengaturan'}
+            </button>
           </form>
 
-          {/* Info saat ini */}
+          {/* Info aktif saat ini */}
           <div className="p-4 rounded-xl bg-white/3 border border-white/8 text-xs text-slate-400">
-            <p className="font-semibold text-slate-300 mb-1">📌 Pengaturan aktif saat ini (dari database):</p>
-            <p>Jam Buka: <span className="font-mono text-emerald-400">{settings?.jam_buka || '07:00'}</span></p>
-            <p>Batas Hadir: <span className="font-mono text-yellow-400">{settings?.jam_batas_hadir || '07:15'}</span></p>
-            <p>Jam Tutup: <span className="font-mono text-red-400">{settings?.jam_tutup || '07:30'}</span></p>
+            <p className="font-semibold text-slate-300 mb-2">📌 Pengaturan aktif saat ini (dari database):</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-amber-400 font-semibold mb-1">☀️ Pagi</p>
+                <p>Buka: <span className="font-mono text-emerald-400">{settings?.jam_buka || '07:00'}</span></p>
+                <p>Batas: <span className="font-mono text-yellow-400">{settings?.jam_batas_hadir || '07:15'}</span></p>
+                <p>Tutup: <span className="font-mono text-red-400">{settings?.jam_tutup || '07:30'}</span></p>
+              </div>
+              <div>
+                <p className="text-blue-400 font-semibold mb-1">🌙 Siang</p>
+                <p>Buka: <span className="font-mono text-emerald-400">{settings?.jam_buka_siang || '12:30'}</span></p>
+                <p>Batas: <span className="font-mono text-yellow-400">{settings?.jam_batas_hadir_siang || '12:45'}</span></p>
+                <p>Tutup: <span className="font-mono text-red-400">{settings?.jam_tutup_siang || '13:00'}</span></p>
+              </div>
+            </div>
           </div>
         </div>
       )}

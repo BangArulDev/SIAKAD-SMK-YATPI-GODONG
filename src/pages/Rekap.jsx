@@ -182,6 +182,7 @@ export default function Rekap() {
                 <th className="px-4 py-3 font-medium">NISN</th>
                 <th className="px-4 py-3 font-medium">Nama Siswa</th>
                 <th className="px-4 py-3 font-medium">Kelas</th>
+                <th className="px-4 py-3 font-medium">Sesi</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Waktu</th>
                 <th className="px-4 py-3 font-medium">Foto</th>
@@ -198,6 +199,11 @@ export default function Rekap() {
                   <td className="px-4 py-3 text-indigo-400 font-mono text-xs">{r.nisn}</td>
                   <td className="px-4 py-3 font-medium text-white">{r.nama}</td>
                   <td className="px-4 py-3 text-slate-300">{r.kelas}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.sesi === 'siang' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                      {r.sesi === 'siang' ? '🌙 Siang' : '☀️ Pagi'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
                       ${r.status === 'hadir' ? 'bg-[#10b981]/10 text-[#10b981]' :
