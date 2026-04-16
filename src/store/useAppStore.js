@@ -17,6 +17,12 @@ const useAppStore = create(
       tugas: [],           // Assignments
       pengumpulan: [],     // Submissions
       isInitialized: false,
+      // Pengaturan jam absensi — nilai default sebagai fallback jika DB belum ada
+      settings: {
+        jam_buka:        '07:00',
+        jam_batas_hadir: '07:15',
+        jam_tutup:       '07:30',
+      },
 
       // --- INITIALIZATION ---
       initApp: async () => {
@@ -42,15 +48,20 @@ const useAppStore = create(
             { data: tugas },
             { data: pengumpulan },
             { data: sessions },
-            { data: profiles }
+            { data: profiles },
+            { data: settingsRow }
           ] = await Promise.all([
             supabase.from('students').select('*'),
             supabase.from('absensi_records').select('*'),
             supabase.from('tugas').select('*'),
             supabase.from('pengumpulan').select('*'),
             supabase.from('absensi_sessions').select('*').eq('is_open', true).eq('tanggal', getTodayDB()).order('opened_at', { ascending: false }).limit(1),
-            supabase.from('profiles').select('*')
+            supabase.from('profiles').select('*'),
+            supabase.from('settings').select('*').eq('id', 'default').single()
           ]);
+
+          // Parse waktu dari format 'HH:MM:SS' ke 'HH:MM'
+          const parseTime = (t) => t ? t.slice(0, 5) : null;
 
           set({ 
             students: students || [], 
@@ -59,7 +70,14 @@ const useAppStore = create(
             pengumpulan: pengumpulan || [],
             teachers: profiles || [],
             mandiriSession: sessions?.[0] || null,
-            isInitialized: true 
+            isInitialized: true,
+            ...(settingsRow ? {
+              settings: {
+                jam_buka:        parseTime(settingsRow.jam_buka)        || '07:00',
+                jam_batas_hadir: parseTime(settingsRow.jam_batas_hadir) || '07:15',
+                jam_tutup:       parseTime(settingsRow.jam_tutup)       || '07:30',
+              }
+            } : {})
           });
 
           // 3. Option to perform migration if needed
@@ -210,23 +228,57 @@ const useAppStore = create(
         if (Date.now() - opened > 8 * 60 * 60 * 1000) return false;
         if (s.tanggal !== getTodayDB()) return false;
 
-        // Sesi absensi mandiri hanya dibuka pada jam 07:00 - 07:30 WIB
+        // Gunakan jam dari settings (dinamis, bisa diubah admin)
+        const { jam_buka, jam_tutup } = get().settings;
+        const toMinutes = (hhmm) => {
+          const [h, m] = hhmm.split(':').map(Number);
+          return h * 60 + m;
+        };
         const now = new Date();
         const totalMinutes = now.getHours() * 60 + now.getMinutes();
-        const openMinute  = 7 * 60;       // 07:00
-        const closeMinute = 7 * 60 + 30;  // 07:30
-        if (totalMinutes < openMinute || totalMinutes >= closeMinute) return false;
+        if (totalMinutes < toMinutes(jam_buka) || totalMinutes >= toMinutes(jam_tutup)) return false;
 
         return true;
       },
 
       // Menentukan status kehadiran otomatis berdasarkan jam absen
-      // 07:00-07:15 → 'hadir', 07:16-07:30 → 'terlambat'
+      // Sebelum batas_hadir → 'hadir', setelahnya → 'terlambat'
       getAutoAttendanceStatus: () => {
+        const { jam_batas_hadir } = get().settings;
+        const toMinutes = (hhmm) => {
+          const [h, m] = hhmm.split(':').map(Number);
+          return h * 60 + m;
+        };
         const now = new Date();
         const totalMinutes = now.getHours() * 60 + now.getMinutes();
-        const lateStart = 7 * 60 + 16; // 07:16
-        return totalMinutes >= lateStart ? 'terlambat' : 'hadir';
+        // Tepat di batas → masih hadir; satu menit setelah batas → terlambat
+        return totalMinutes > toMinutes(jam_batas_hadir) ? 'terlambat' : 'hadir';
+      },
+
+      // --- SETTINGS ---
+      updateSettings: async (newSettings) => {
+        const { data, error } = await supabase
+          .from('settings')
+          .update({
+            jam_buka:        newSettings.jam_buka,
+            jam_batas_hadir: newSettings.jam_batas_hadir,
+            jam_tutup:       newSettings.jam_tutup,
+            updated_at:      new Date().toISOString(),
+          })
+          .eq('id', 'default')
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const parseTime = (t) => t ? t.slice(0, 5) : t;
+        set({
+          settings: {
+            jam_buka:        parseTime(data.jam_buka)        || newSettings.jam_buka,
+            jam_batas_hadir: parseTime(data.jam_batas_hadir) || newSettings.jam_batas_hadir,
+            jam_tutup:       parseTime(data.jam_tutup)       || newSettings.jam_tutup,
+          }
+        });
       },
 
       // --- RECORDS ---

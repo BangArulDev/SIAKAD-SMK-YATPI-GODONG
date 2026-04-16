@@ -28,7 +28,7 @@ const LOC_STATUS = {
 
 export default function Absensi() {
   const navigate = useNavigate();
-  const { session, mandiriSession, isMandiriOpen, getAutoAttendanceStatus, addRecord, logout } = useAppStore();
+  const { session, mandiriSession, isMandiriOpen, getAutoAttendanceStatus, addRecord, logout, settings } = useAppStore();
   const { addToast } = useToast();
 
   const [status, setStatus] = useState("hadir");
@@ -397,15 +397,15 @@ export default function Absensi() {
             <Lock size={28} strokeWidth={1.8} />
           </div>
           <h2 className="text-xl font-bold mb-2 text-red-400">Sesi Absensi Ditutup</h2>
-          <p className="text-sm text-slate-400">Sesi absensi hanya dibuka otomatis pada pukul <strong className="text-slate-300">07:00 – 07:30 WIB</strong>.</p>
+          <p className="text-sm text-slate-400">Sesi absensi hanya dibuka otomatis pada pukul <strong className="text-slate-300">{settings?.jam_buka || '07:00'} – {settings?.jam_tutup || '07:30'} WIB</strong>.</p>
           <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 space-y-1.5">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-              <span><strong className="text-green-400">07:00 – 07:15</strong> → Status: <strong className="text-green-400">Hadir</strong></span>
+              <span><strong className="text-green-400">{settings?.jam_buka || '07:00'} – {settings?.jam_batas_hadir || '07:15'}</strong> → Status: <strong className="text-green-400">Hadir</strong></span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
-              <span><strong className="text-yellow-400">07:16 – 07:30</strong> → Status: <strong className="text-yellow-400">Terlambat</strong></span>
+              <span><strong className="text-yellow-400">{settings?.jam_batas_hadir || '07:15'} – {settings?.jam_tutup || '07:30'}</strong> → Status: <strong className="text-yellow-400">Terlambat</strong></span>
             </div>
           </div>
           <button onClick={() => window.location.reload()}
@@ -438,11 +438,11 @@ export default function Absensi() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                  <span><strong className="text-green-400">07:00 – 07:15</strong> → Hadir</span>
+                  <span><strong className="text-green-400">{settings?.jam_buka || '07:00'} – {settings?.jam_batas_hadir || '07:15'}</strong> → Hadir</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-                  <span><strong className="text-yellow-400">07:16 – 07:30</strong> → Terlambat</span>
+                  <span><strong className="text-yellow-400">{settings?.jam_batas_hadir || '07:15'} – {settings?.jam_tutup || '07:30'}</strong> → Terlambat</span>
                 </div>
               </div>
               <p className="text-slate-500 italic mt-2">Status ditentukan otomatis saat menekan tombol kirim.</p>

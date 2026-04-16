@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
-import { GraduationCap, Users, Pencil, Trash2, Plus, Loader2, ShieldCheck } from 'lucide-react';
+import { GraduationCap, Users, Pencil, Trash2, Plus, Loader2, ShieldCheck, Settings, Clock, Save, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function Admin() {
-  const { session, students, teachers, addStudent, updateStudent, deleteStudent, addTeacher, updateTeacher, deleteTeacher } = useAppStore();
+  const { session, students, teachers, settings, addStudent, updateStudent, deleteStudent, addTeacher, updateTeacher, deleteTeacher, updateSettings } = useAppStore();
   const { addToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('siswa'); // 'siswa' atau 'guru'
+  const [activeTab, setActiveTab] = useState('siswa'); // 'siswa' | 'guru' | 'pengaturan'
   
   // Modals state
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -15,6 +15,13 @@ export default function Admin() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Settings form state — inisialisasi dari store
+  const [settingsForm, setSettingsForm] = useState({
+    jam_buka:        settings?.jam_buka        || '07:00',
+    jam_batas_hadir: settings?.jam_batas_hadir || '07:15',
+    jam_tutup:       settings?.jam_tutup       || '07:30',
+  });
 
   // === HANDLERS SISWA ===
   const handleStudentSubmit = async (e) => {
@@ -90,6 +97,31 @@ export default function Admin() {
     }
   };
 
+  // === HANDLER PENGATURAN ===
+  const handleSettingsSubmit = async (e) => {
+    e.preventDefault();
+    const { jam_buka, jam_batas_hadir, jam_tutup } = settingsForm;
+
+    // Validasi urutan waktu
+    const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+    if (toMin(jam_buka) >= toMin(jam_batas_hadir)) {
+      return addToast('Jam buka harus sebelum batas terlambat', 'warning');
+    }
+    if (toMin(jam_batas_hadir) >= toMin(jam_tutup)) {
+      return addToast('Batas terlambat harus sebelum jam tutup', 'warning');
+    }
+
+    setLoading(true);
+    try {
+      await updateSettings(settingsForm);
+      addToast('Pengaturan jam absensi berhasil disimpan!', 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (session?.role !== 'admin') return <div className="text-center p-10 text-xl font-bold">Akses Ditolak</div>;
 
@@ -97,7 +129,7 @@ export default function Admin() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold">Admin Panel</h1>
-        <p className="text-slate-400">Manajemen Database Siswa dan Staf / Guru</p>
+        <p className="text-slate-400">Manajemen Database Siswa, Staf / Guru, dan Pengaturan Sistem</p>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -113,6 +145,12 @@ export default function Admin() {
             onClick={() => setActiveTab('guru')}
           >
             <GraduationCap size={15} /> Data Guru / Admin
+          </button>
+          <button
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'pengaturan' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            onClick={() => setActiveTab('pengaturan')}
+          >
+            <Settings size={15} /> Pengaturan
           </button>
         </div>
       </div>
@@ -210,6 +248,114 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: PENGATURAN JAM ABSENSI */}
+      {activeTab === 'pengaturan' && (
+        <div className="max-w-xl space-y-5">
+
+          {/* Info card */}
+          <div className="glass-card p-5 border border-indigo-500/20">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="icon-wrap icon-wrap-sm icon-indigo"><Clock size={15} /></div>
+              <h2 className="font-bold text-white">Pengaturan Jam Absensi</h2>
+            </div>
+            <p className="text-sm text-slate-400 ml-10">
+              Ubah jam buka dan tutup absensi sesuai jadwal sekolah. Perubahan langsung berlaku tanpa perlu ubah kode program.
+            </p>
+          </div>
+
+          {/* Visual timeline */}
+          <div className="glass-card p-5 border border-white/10">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Preview Jadwal Absensi</p>
+            <div className="relative h-10 rounded-xl overflow-hidden flex">
+              {/* Zona hadir */}
+              <div className="flex-1 bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400">
+                ✅ Hadir
+              </div>
+              {/* Pemisah batas terlambat */}
+              <div className="w-0.5 bg-yellow-400/60" />
+              {/* Zona terlambat */}
+              <div className="flex-1 bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-xs font-bold text-yellow-400">
+                ⏰ Terlambat
+              </div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-slate-400">
+              <span className="font-mono text-emerald-400">{settingsForm.jam_buka}</span>
+              <span className="font-mono text-yellow-400">{settingsForm.jam_batas_hadir} (batas)</span>
+              <span className="font-mono text-red-400">{settingsForm.jam_tutup} (tutup)</span>
+            </div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSettingsSubmit} className="glass-card p-6 border border-white/10 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Jam Buka */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400" /> Jam Buka
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={settingsForm.jam_buka}
+                  onChange={e => setSettingsForm(f => ({ ...f, jam_buka: e.target.value }))}
+                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-emerald-500 outline-none text-sm font-mono"
+                />
+                <p className="text-xs text-slate-500 mt-1">Absensi mulai bisa diisi</p>
+              </div>
+
+              {/* Batas Hadir */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <AlertTriangle size={13} className="text-yellow-400" /> Batas Hadir
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={settingsForm.jam_batas_hadir}
+                  onChange={e => setSettingsForm(f => ({ ...f, jam_batas_hadir: e.target.value }))}
+                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-yellow-500 outline-none text-sm font-mono"
+                />
+                <p className="text-xs text-slate-500 mt-1">Setelah ini → Terlambat</p>
+              </div>
+
+              {/* Jam Tutup */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Clock size={13} className="text-red-400" /> Jam Tutup
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={settingsForm.jam_tutup}
+                  onChange={e => setSettingsForm(f => ({ ...f, jam_tutup: e.target.value }))}
+                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-red-500 outline-none text-sm font-mono"
+                />
+                <p className="text-xs text-slate-500 mt-1">Absensi tidak bisa diisi</p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/5">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-500/20"
+              >
+                {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                {loading ? 'Menyimpan...' : 'Simpan Pengaturan'}
+              </button>
+            </div>
+          </form>
+
+          {/* Info saat ini */}
+          <div className="p-4 rounded-xl bg-white/3 border border-white/8 text-xs text-slate-400">
+            <p className="font-semibold text-slate-300 mb-1">📌 Pengaturan aktif saat ini (dari database):</p>
+            <p>Jam Buka: <span className="font-mono text-emerald-400">{settings?.jam_buka || '07:00'}</span></p>
+            <p>Batas Hadir: <span className="font-mono text-yellow-400">{settings?.jam_batas_hadir || '07:15'}</span></p>
+            <p>Jam Tutup: <span className="font-mono text-red-400">{settings?.jam_tutup || '07:30'}</span></p>
           </div>
         </div>
       )}
