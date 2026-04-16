@@ -15,6 +15,7 @@ export default function Rekap() {
   const [filterFrom, setFilterFrom] = useState(today);
   const [filterTo, setFilterTo] = useState(today);
   const [filterKelas, setFilterKelas] = useState('');
+  const [filterSesi, setFilterSesi] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
   const [selectedFoto, setSelectedFoto] = useState(null);
@@ -24,9 +25,10 @@ export default function Rekap() {
       const isAfterFrom = !filterFrom || r.tanggal >= filterFrom;
       const isBeforeTo = !filterTo || r.tanggal <= filterTo;
       const matchKelas = !filterKelas || r.kelas === filterKelas;
+      const matchSesi = !filterSesi || r.sesi === filterSesi;
       const matchStatus = !filterStatus || r.status === filterStatus;
       const matchSearch = !search || r.nama.toLowerCase().includes(search.toLowerCase()) || (r.nisn || '').includes(search);
-      return isAfterFrom && isBeforeTo && matchKelas && matchStatus && matchSearch;
+      return isAfterFrom && isBeforeTo && matchKelas && matchSesi && matchStatus && matchSearch;
     }).sort((a, b) => {
       // sort latest first
       const timeA = a.tanggal + a.waktu;
@@ -45,6 +47,7 @@ export default function Rekap() {
     setFilterFrom('');
     setFilterTo('');
     setFilterKelas('');
+    setFilterSesi('');
     setFilterStatus('');
     setSearch('');
   };
@@ -74,6 +77,7 @@ export default function Rekap() {
       NISN: r.nisn,
       Nama: r.nama,
       Kelas: r.kelas,
+      Sesi: r.sesi === 'siang' ? 'Siang' : 'Pagi',
       Status: r.status.toUpperCase(),
       Keterangan: r.keterangan || '-',
       Metode: r.metode || 'web'
@@ -104,7 +108,7 @@ export default function Rekap() {
 
       {/* FILTER */}
       <div className="glass-card p-4 print:hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1">Dari Tanggal</label>
             <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
@@ -118,6 +122,14 @@ export default function Rekap() {
             <select value={filterKelas} onChange={e => setFilterKelas(e.target.value)} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
               <option value="">Semua Kelas</option>
               {classes.map(k => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Sesi</label>
+            <select value={filterSesi} onChange={e => setFilterSesi(e.target.value)} className="w-full bg-[#0d0d25] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+              <option value="">Semua Sesi</option>
+              <option value="pagi">Pagi</option>
+              <option value="siang">Siang</option>
             </select>
           </div>
           <div>
