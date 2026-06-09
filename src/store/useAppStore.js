@@ -205,11 +205,21 @@ const useAppStore = create(
         const session = get().session;
         if (!session || (session.role !== 'guru' && session.role !== 'admin')) throw new Error('Hanya guru/admin');
         
+        let dbSesi = sesi;
+        let dbMateri = materi;
+        
+        // WORKAROUND: Supabase RLS/Constraint mungkin hanya mengizinkan 'pagi' atau 'siang'
+        // Jadi kita simpan sebagai 'pagi' tapi tambahkan prefix [TAMBAHAN] di materinya
+        if (sesi === 'tambahan') {
+          dbSesi = 'pagi';
+          dbMateri = `[TAMBAHAN] ${materi}`;
+        }
+
         const mSess = {
-          materi,
+          materi: dbMateri,
           deskripsi,
           kelas,
-          sesi,                              // 'pagi' | 'siang'
+          sesi: dbSesi,                      // 'pagi' | 'siang'
           guru_id: session.id,
           guru_nama: session.nama,
           tanggal: getTodayDB(),
@@ -265,7 +275,7 @@ const useAppStore = create(
           if (s.kelas !== 'Semua' && s.kelas !== kelas) continue;
 
           // Sesi tambahan: bypass validasi jendela waktu — selalu aktif jika is_open
-          if (s.sesi === 'tambahan') return s;
+          if (s.sesi === 'tambahan' || s.materi?.includes('[TAMBAHAN]')) return s;
 
           // Tentukan jendela waktu berdasarkan sesi pagi/siang
           const isSiang = s.sesi === 'siang';

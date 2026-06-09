@@ -25,11 +25,13 @@ export default function Admin() {
   // Ambil sesi tambahan hari ini
   const today = new Date().toLocaleDateString('en-CA');
   const sesiTambahanList = useMemo(() =>
-    (mandiriSessions || []).filter(s => s.sesi === 'tambahan' && s.tanggal === today),
+    (mandiriSessions || []).filter(s => (s.sesi === 'tambahan' || s.materi?.includes('[TAMBAHAN]')) && s.tanggal === today),
     [mandiriSessions, today]
   );
   const sesiTambahanAktif = sesiTambahanList.filter(s => s.is_open);
   const sesiTambahanTutup = sesiTambahanList.filter(s => !s.is_open);
+
+  const formatMateriDisplay = (materi) => materi?.replace('[TAMBAHAN] ', '').replace('[TAMBAHAN]', '') || '';
 
   // Settings form state — inisialisasi dari store
   const [settingsForm, setSettingsForm] = useState({
@@ -457,7 +459,7 @@ export default function Admin() {
                 <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-purple-500/5 border border-purple-500/20 gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-bold text-white">{s.materi}</span>
+                      <span className="text-sm font-bold text-white">{formatMateriDisplay(s.materi)}</span>
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">TAMBAHAN</span>
                       {s.is_daring && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">DARING</span>
@@ -497,7 +499,7 @@ export default function Admin() {
                   <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/8 gap-3 opacity-60">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-slate-300 line-through">{s.materi}</span>
+                        <span className="text-sm font-semibold text-slate-300 line-through">{formatMateriDisplay(s.materi)}</span>
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-500 border border-slate-500/30">SELESAI</span>
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">Kelas: {s.kelas} · {s.guru_nama}</div>

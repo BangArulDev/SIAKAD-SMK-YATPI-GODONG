@@ -30,10 +30,12 @@ export default function Dashboard() {
   }, [todayRecords]);
 
   // Pisahkan sesi aktif hari ini berdasarkan pagi/siang/tambahan
-  const pagiSessions     = useMemo(() => (mandiriSessions || []).filter(s => s.sesi !== 'siang' && s.sesi !== 'tambahan'), [mandiriSessions]);
-  const siangSessions    = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'siang'), [mandiriSessions]);
-  const tambahanSessions = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'tambahan'), [mandiriSessions]);
+  const pagiSessions     = useMemo(() => (mandiriSessions || []).filter(s => s.sesi !== 'siang' && s.sesi !== 'tambahan' && !s.materi?.includes('[TAMBAHAN]')), [mandiriSessions]);
+  const siangSessions    = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'siang' && !s.materi?.includes('[TAMBAHAN]')), [mandiriSessions]);
+  const tambahanSessions = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'tambahan' || s.materi?.includes('[TAMBAHAN]')), [mandiriSessions]);
   const classes = useMemo(() => getClasses(), [students]);
+
+  const formatMateriDisplay = (materi) => materi?.replace('[TAMBAHAN] ', '').replace('[TAMBAHAN]', '') || '';
 
   // === HANDLERS ===
   const handleManualAbsen = async (e) => {
@@ -200,7 +202,7 @@ export default function Dashboard() {
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">DARING</span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 truncate">{s.materi} · {s.guru_nama}</p>
+                  <p className="text-xs text-slate-400 truncate">{formatMateriDisplay(s.materi)} · {s.guru_nama}</p>
                 </div>
                 <button
                   onClick={() => handleCloseSession(s.id, s.materi)}

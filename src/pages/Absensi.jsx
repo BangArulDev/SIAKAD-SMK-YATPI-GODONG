@@ -429,7 +429,7 @@ export default function Absensi() {
                 </span>
               )}
             </div>
-            <h1 className="text-lg font-bold mb-0.5">Materi: {activeSession?.materi}</h1>
+            <h1 className="text-lg font-bold mb-0.5">Materi: {activeSession?.materi?.replace('[TAMBAHAN] ', '').replace('[TAMBAHAN]', '')}</h1>
             <p className="text-xs text-slate-400">{activeSession?.deskripsi || 'Sesi mandiri aktif'}</p>
             {isDaring && (
               <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
