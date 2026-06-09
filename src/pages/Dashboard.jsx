@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast';
 import {
   CheckCircle2, HeartPulse, FileText, Clock, XCircle,
   PenLine, ClipboardCheck, Hash, Loader2,
-  Sun, Moon, Play, Square, Wifi, WifiOff, ChevronDown, ChevronUp, Users
+  Sun, Moon, Play, Square, Wifi, WifiOff, ChevronDown, ChevronUp, Users, Zap
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -29,9 +29,10 @@ export default function Dashboard() {
     return s;
   }, [todayRecords]);
 
-  // Pisahkan sesi aktif hari ini berdasarkan pagi/siang
-  const pagiSessions  = useMemo(() => (mandiriSessions || []).filter(s => s.sesi !== 'siang'), [mandiriSessions]);
-  const siangSessions = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'siang'), [mandiriSessions]);
+  // Pisahkan sesi aktif hari ini berdasarkan pagi/siang/tambahan
+  const pagiSessions     = useMemo(() => (mandiriSessions || []).filter(s => s.sesi !== 'siang' && s.sesi !== 'tambahan'), [mandiriSessions]);
+  const siangSessions    = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'siang'), [mandiriSessions]);
+  const tambahanSessions = useMemo(() => (mandiriSessions || []).filter(s => s.sesi === 'tambahan'), [mandiriSessions]);
   const classes = useMemo(() => getClasses(), [students]);
 
   // === HANDLERS ===
@@ -174,6 +175,46 @@ export default function Dashboard() {
           borderClass="border-blue-500/20" sessions={siangSessions}
         />
       </div>
+
+      {/* SESI TAMBAHAN (hanya tampil jika ada) */}
+      {tambahanSessions.length > 0 && (
+        <div className="glass-card overflow-hidden border border-purple-500/20">
+          <div className="p-4 flex items-center justify-between border-b border-white/10 bg-white/3">
+            <div className="flex items-center gap-2">
+              <div className="icon-wrap icon-wrap-sm" style={{background:'rgba(168,85,247,0.15)', color:'#c084fc'}}><Zap size={15} /></div>
+              <span className="font-bold text-white">Sesi Tambahan</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 animate-pulse">
+                {tambahanSessions.length} AKTIF
+              </span>
+            </div>
+            <span className="text-xs text-slate-500">Dibuat oleh Admin · Tidak terbatas waktu</span>
+          </div>
+          <div className="p-3 space-y-2">
+            {tambahanSessions.map(s => (
+              <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-purple-500/5 border border-purple-500/20 gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-white truncate">{s.kelas}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">TAMBAHAN</span>
+                    {s.is_daring && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">DARING</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 truncate">{s.materi} · {s.guru_nama}</p>
+                </div>
+                <button
+                  onClick={() => handleCloseSession(s.id, s.materi)}
+                  disabled={closingId === s.id}
+                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-lg text-xs font-semibold transition border border-red-500/20"
+                >
+                  {closingId === s.id ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} />}
+                  Tutup
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">

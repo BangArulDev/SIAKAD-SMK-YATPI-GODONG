@@ -264,6 +264,9 @@ const useAppStore = create(
           // Cocokkan kelas (atau sesi untuk Semua kelas)
           if (s.kelas !== 'Semua' && s.kelas !== kelas) continue;
 
+          // Sesi tambahan: bypass validasi jendela waktu — selalu aktif jika is_open
+          if (s.sesi === 'tambahan') return s;
+
           // Tentukan jendela waktu berdasarkan sesi pagi/siang
           const isSiang = s.sesi === 'siang';
           const jamBuka  = isSiang ? settings.jam_buka_siang  : settings.jam_buka;

@@ -419,9 +419,15 @@ export default function Absensi() {
         <div className="w-full max-w-lg glass-card animate-fade-in">
           <div className="p-5 border-b border-white/10 bg-indigo-500/5">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className={`px-2 py-0.5 rounded text-xs font-bold ${activeSession?.sesi === 'siang' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                {activeSession?.sesi === 'siang' ? '🌙 SESI SIANG' : '☀️ SESI PAGI'}
-              </span>
+              {activeSession?.sesi === 'tambahan' ? (
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-400">
+                  ⚡ SESI TAMBAHAN
+                </span>
+              ) : (
+                <span className={`px-2 py-0.5 rounded text-xs font-bold ${activeSession?.sesi === 'siang' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                  {activeSession?.sesi === 'siang' ? '🌙 SESI SIANG' : '☀️ SESI PAGI'}
+                </span>
+              )}
             </div>
             <h1 className="text-lg font-bold mb-0.5">Materi: {activeSession?.materi}</h1>
             <p className="text-xs text-slate-400">{activeSession?.deskripsi || 'Sesi mandiri aktif'}</p>

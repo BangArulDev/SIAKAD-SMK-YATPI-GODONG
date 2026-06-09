@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../components/Toast';
-import { GraduationCap, Users, Pencil, Trash2, Plus, Loader2, ShieldCheck, Settings, Clock, Save, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { GraduationCap, Users, Pencil, Trash2, Plus, Loader2, ShieldCheck, Settings, Clock, Save, CheckCircle2, AlertTriangle, Zap, Play, Square, Calendar } from 'lucide-react';
 
 export default function Admin() {
-  const { session, students, teachers, settings, addStudent, updateStudent, deleteStudent, addTeacher, updateTeacher, deleteTeacher, updateSettings } = useAppStore();
+  const { session, students, teachers, settings, mandiriSessions, addStudent, updateStudent, deleteStudent, addTeacher, updateTeacher, deleteTeacher, updateSettings, openMandiri, closeMandiri, getClasses } = useAppStore();
   const { addToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('siswa'); // 'siswa' | 'guru' | 'pengaturan'
+  const classes = useMemo(() => getClasses(), [students]);
+
+  const [activeTab, setActiveTab] = useState('siswa'); // 'siswa' | 'guru' | 'pengaturan' | 'sesi-tambahan'
   
   // Modals state
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -15,6 +17,19 @@ export default function Admin() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Sesi Tambahan state
+  const [showSesiTambahanModal, setShowSesiTambahanModal] = useState(false);
+  const [closingId, setClosingId] = useState(null);
+
+  // Ambil sesi tambahan hari ini
+  const today = new Date().toLocaleDateString('en-CA');
+  const sesiTambahanList = useMemo(() =>
+    (mandiriSessions || []).filter(s => s.sesi === 'tambahan' && s.tanggal === today),
+    [mandiriSessions, today]
+  );
+  const sesiTambahanAktif = sesiTambahanList.filter(s => s.is_open);
+  const sesiTambahanTutup = sesiTambahanList.filter(s => !s.is_open);
 
   // Settings form state — inisialisasi dari store
   const [settingsForm, setSettingsForm] = useState({
@@ -125,6 +140,42 @@ export default function Admin() {
   };
 
 
+  // === HANDLER SESI TAMBAHAN ===
+  const handleOpenSesiTambahan = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    setLoading(true);
+    try {
+      await openMandiri(
+        fd.get('materi'),
+        fd.get('deskripsi'),
+        fd.get('kelas'),
+        fd.get('mode') === 'daring',
+        'tambahan'
+      );
+      addToast('Sesi Tambahan berhasil dibuka!', 'success');
+      setShowSesiTambahanModal(false);
+      e.target.reset();
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseSesiTambahan = async (sessionId, label) => {
+    if (!window.confirm(`Tutup sesi "${label}"? Siswa tidak bisa absen lagi setelah ditutup.`)) return;
+    setClosingId(sessionId);
+    try {
+      await closeMandiri(sessionId);
+      addToast(`Sesi "${label}" berhasil ditutup`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setClosingId(null);
+    }
+  };
+
   if (session?.role !== 'admin') return <div className="text-center p-10 text-xl font-bold">Akses Ditolak</div>;
 
   return (
@@ -153,6 +204,17 @@ export default function Admin() {
             onClick={() => setActiveTab('pengaturan')}
           >
             <Settings size={15} /> Pengaturan
+          </button>
+          <button
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'sesi-tambahan' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            onClick={() => setActiveTab('sesi-tambahan')}
+          >
+            <Zap size={15} /> Sesi Tambahan
+            {sesiTambahanAktif.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-400/30 text-purple-200 animate-pulse">
+                {sesiTambahanAktif.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -358,6 +420,97 @@ export default function Admin() {
         </div>
       )}
 
+      {/* TAB: SESI TAMBAHAN */}
+      {activeTab === 'sesi-tambahan' && (
+        <div className="space-y-5">
+
+          {/* Info card */}
+          <div className="glass-card p-5 border border-purple-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="icon-wrap icon-wrap-md" style={{background:'rgba(168,85,247,0.15)', color:'#c084fc'}}><Zap size={18} /></div>
+                <div>
+                  <h2 className="font-bold text-white">Sesi Tambahan</h2>
+                  <p className="text-xs text-slate-400">Buka sesi absensi kapan saja di luar jam reguler — untuk kegiatan insidental</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSesiTambahanModal(true)}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold rounded-xl transition shadow-lg shadow-purple-500/20 text-sm"
+              >
+                <Plus size={15} /> Buka Sesi Tambahan
+              </button>
+            </div>
+          </div>
+
+          {/* Sesi Aktif */}
+          <div className="glass-card overflow-hidden border border-purple-500/20">
+            <div className="p-4 border-b border-white/10 bg-white/3 flex items-center gap-3">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">● AKTIF</span>
+              <h3 className="font-semibold text-white">Sesi Berjalan ({sesiTambahanAktif.length})</h3>
+            </div>
+            <div className="p-3 space-y-2 min-h-[60px]">
+              {sesiTambahanAktif.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">Tidak ada sesi tambahan yang sedang berjalan</p>
+              ) : sesiTambahanAktif.map(s => (
+                <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-purple-500/5 border border-purple-500/20 gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-white">{s.materi}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">TAMBAHAN</span>
+                      {s.is_daring && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">DARING</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">Kelas: {s.kelas} · Dibuka oleh: {s.guru_nama}</div>
+                    {s.deskripsi && <div className="text-xs text-slate-500 mt-0.5 italic">{s.deskripsi}</div>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 text-xs text-emerald-400 font-semibold">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Aktif
+                    </div>
+                    <button
+                      onClick={() => handleCloseSesiTambahan(s.id, s.materi)}
+                      disabled={closingId === s.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-lg text-xs font-semibold transition border border-red-500/20"
+                    >
+                      {closingId === s.id ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} />}
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sesi Selesai */}
+          {sesiTambahanTutup.length > 0 && (
+            <div className="glass-card overflow-hidden border border-white/8">
+              <div className="p-4 border-b border-white/10 bg-white/3 flex items-center gap-3">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-500/20 text-slate-400 border border-slate-500/30">● SELESAI</span>
+                <h3 className="font-semibold text-slate-300">Riwayat Hari Ini ({sesiTambahanTutup.length})</h3>
+              </div>
+              <div className="p-3 space-y-2">
+                {sesiTambahanTutup.map(s => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/8 gap-3 opacity-60">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-slate-300 line-through">{s.materi}</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-500 border border-slate-500/30">SELESAI</span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">Kelas: {s.kelas} · {s.guru_nama}</div>
+                    </div>
+                    <Calendar size={14} className="text-slate-600 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* MODALS */}
       {showStudentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -434,6 +587,68 @@ export default function Admin() {
                   {loading ? 'Memproses...' : 'Simpan'}
                 </button>
               </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: BUKA SESI TAMBAHAN */}
+      {showSesiTambahanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowSesiTambahanModal(false)}>
+          <form onSubmit={handleOpenSesiTambahan} className="bg-[#0d0d1f] rounded-2xl p-6 w-full max-w-md animate-slide-up border border-purple-500/30 shadow-2xl shadow-black/50" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="icon-wrap icon-wrap-md" style={{background:'rgba(168,85,247,0.15)', color:'#c084fc'}}>
+                <Zap size={18} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Buka Sesi Tambahan</h2>
+                <p className="text-xs text-slate-400">Sesi aktif seketika tanpa batas waktu reguler</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Label / Nama Kegiatan <span className="text-purple-400">*</span></label>
+                <input
+                  name="materi" required type="text"
+                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-purple-500 outline-none"
+                  placeholder="Contoh: Upacara, Remedial, Rapat Orang Tua..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Kelas</label>
+                <select name="kelas" required className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-purple-500 outline-none">
+                  <option value="Semua">Semua Kelas</option>
+                  {classes.map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Deskripsi (opsional)</label>
+                <input
+                  name="deskripsi" type="text"
+                  className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-purple-500 outline-none"
+                  placeholder="Keterangan tambahan..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Mode Pembelajaran</label>
+                <select name="mode" className="w-full bg-[#0d0d25] border border-white/10 rounded-lg p-2.5 text-white focus:border-purple-500 outline-none">
+                  <option value="tatap">🏫 Tatap Muka (validasi GPS)</option>
+                  <option value="daring">💻 Daring / Online (tanpa GPS)</option>
+                </select>
+              </div>
+              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 flex items-start gap-2">
+                <Zap size={13} className="shrink-0 mt-0.5" />
+                <span>Sesi tambahan <strong>tidak terikat jam reguler</strong>. Siswa dapat absen selama sesi ini aktif.</span>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button type="button" onClick={() => setShowSesiTambahanModal(false)}
+                className="flex-1 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">Batal</button>
+              <button type="submit" disabled={loading}
+                className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition flex items-center justify-center gap-2">
+                {loading ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+                {loading ? 'Membuka...' : 'Buka Sesi'}
+              </button>
+            </div>
           </form>
         </div>
       )}
